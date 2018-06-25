@@ -9,6 +9,6 @@ if __name__ == '__main__':
 	print("Connected to the server")
 	while True:
 		msg = str(input("Send your message to the server: "))
-		sock.sendall(msg)
+		sock.sendall(msg.encode('utf-8'))
 		data = sock.recv(16)
 		print("The server answered: {answer}".format(answer=data))

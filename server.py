@@ -15,7 +15,16 @@ sensor_temps = {
 "Temperature Monitor Server 3" : sensor_3_temps,
 "Temperature Monitor Server 4" : sensor_4_temps,}
 
-print(sensor_1_temps)
+class TempMonitorThread(Thread):
+
+	def __init__(self, socket, client_address):
+		Thread.__init__(self)
+		self.client_address = client_address
+		self.daemon = True
+		self.socket = socket
+
+	def run(self):
+		print("Socket thread criado")
 
  
 class ServerThread(Thread):
@@ -49,8 +58,8 @@ class ServerThread(Thread):
 
 	def open_socket(self):
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		server_address = ('localhost', self.port)
-		print("Starting {name} at port {port}".format(name=self.getName(), port=self.port))
+		server_address = ('0.0.0.0', self.port)
+		print("Starting server at port {port}".format(port=self.port))
 		self.socket.bind(server_address)
 
 		# Listen for incoming connections
@@ -60,51 +69,31 @@ class ServerThread(Thread):
 			print("Waiting for incoming connections")
 			self.connection, self.client_address = self.socket.accept()
 			if self.connection:
-				break
-
-		try:
-			print("Incoming connection from {client}".format(client=self.client_address))
-
-			while True:
-				status = self.log_temperatures()
-				if status != 0:
-					break
-
-		finally:
-			self.connection.close()
+				print(self.connection, self.client_address)
+				temp_monitor = TempMonitorThread(self.connection, self.client_address)
+				temp_monitor.start()
 	 
  
 if __name__ == '__main__':
-	temp_monitor_server_1 = ServerThread(4001)
-	temp_monitor_server_1.setName('Temperature Monitor Server 1')
+	temp_monitor_server = ServerThread(5555)
+	temp_monitor_server.setName('Temperature Monitor Server')
 
-	temp_monitor_server_2 = ServerThread(4002)
-	temp_monitor_server_2.setName('Temperature Monitor Server 2')
 
-	temp_monitor_server_3 = ServerThread(4003)
-	temp_monitor_server_3.setName('Temperature Monitor Server 3')
+	temp_monitor_server.start()
 
-	temp_monitor_server_4 = ServerThread(4004)
-	temp_monitor_server_4.setName('Temperature Monitor Server 4')
 
-	temp_monitor_server_1.start()
-	temp_monitor_server_2.start()
-	temp_monitor_server_3.start()
-	temp_monitor_server_4.start()
+	# plt.plot(range(len(sensor_temps["Temperature Monitor Server 1"])), list(sensor_temps["Temperature Monitor Server 1"]))
+	# plt.show()
+	# while True:
+	# 	time.sleep(3)
+	# 	print("plotting graph")
+	# 	print(range(len(sensor_temps["Temperature Monitor Server 1"])), list(sensor_temps["Temperature Monitor Server 1"]))
+	# 	plt.plot(range(len(sensor_temps["Temperature Monitor Server 1"])), list(sensor_temps["Temperature Monitor Server 1"]))
+	# 	plt.draw()
 
-	plt.plot(range(len(sensor_temps["Temperature Monitor Server 1"])), list(sensor_temps["Temperature Monitor Server 1"]))
-	plt.show()
-	while True:
-		time.sleep(3)
-		print("plotting graph")
-		print(range(len(sensor_temps["Temperature Monitor Server 1"])), list(sensor_temps["Temperature Monitor Server 1"]))
-		plt.plot(range(len(sensor_temps["Temperature Monitor Server 1"])), list(sensor_temps["Temperature Monitor Server 1"]))
-		plt.draw()
+	temp_monitor_server.join()
 
-	temp_monitor_server_1.join()
-	temp_monitor_server_2.join()
-	temp_monitor_server_3.join()
-	temp_monitor_server_4.join()
+
 
 
 	
