@@ -5,11 +5,12 @@ import traceback
 from collections import deque
 import matplotlib.pyplot as plt
 
+    
+CONNECTION_LIST = []
+TEMP_MONITORS = []
+RECV_BUFFER = 4096
+PORT = 5000
 
-def update_line(hl, new_data):
-    plt.clf()
-    plt.plot(range(len(new_data)), new_data)
-    plt.pause(0.05)
 
 def get_temp_monitor(monitors, socket):
     for monitor in monitors:
@@ -37,15 +38,14 @@ class TempMonitor():
     def log_temperature(self, temp):
         self.temps.append(float(temp))
 
+    def update_line(self):
+        plt.clf()
+        for monitor in TEMP_MONITORS:
+            plt.plot(range(len(monitor.temps)), monitor.temps)
+            plt.pause(0.05)
+
   
 if __name__ == "__main__":
-    
-    plt.ion()
-    hl, = plt.plot([], [])
-    CONNECTION_LIST = []
-    TEMP_MONITORS = []
-    RECV_BUFFER = 4096
-    PORT = 5000
          
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -74,7 +74,7 @@ if __name__ == "__main__":
                     data = sock.recv(RECV_BUFFER)
                     monitor = get_temp_monitor(TEMP_MONITORS, sock)
                     monitor.log_temperature(data)
-                    update_line(hl, monitor.temps)
+                    monitor.update_line()
                     print("Received {data} from monitor {monitor}".format(data=data, monitor=monitor.number))
                     if data:
                         sock.send('OK ... '.encode('utf-8'))
