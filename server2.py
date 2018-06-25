@@ -4,13 +4,12 @@ import socket, select
 import traceback
 from collections import deque
 import matplotlib.pyplot as plt
-import numpy
 
 
 def update_line(hl, new_data):
-    hl.set_xdata(range(len(new_data)))
-    hl.set_ydata(new_data)
-    plt.draw()
+    plt.clf()
+    plt.plot(range(len(new_data)), new_data)
+    plt.pause(0.05)
 
 def get_temp_monitor(monitors, socket):
     for monitor in monitors:
