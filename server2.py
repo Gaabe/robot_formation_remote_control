@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 CONNECTION_LIST = []
 TEMP_MONITORS = []
 RECV_BUFFER = 4096
-PORT = 5000
+PORT = 4001
 
 
 def get_temp_monitor(monitors, socket):
@@ -49,12 +49,12 @@ if __name__ == "__main__":
          
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.bind(("0.0.0.0", PORT))
+    server_socket.bind(('0.0.0.0', PORT))
     server_socket.listen(10)
  
     CONNECTION_LIST.append(server_socket)
  
-    print("Chat server started on port " + str(PORT))
+    print("Server started on port " + str(PORT))
  
     while 1:
         read_sockets,write_sockets,error_sockets = select.select(CONNECTION_LIST,[],[])
@@ -80,6 +80,8 @@ if __name__ == "__main__":
                         sock.send('OK ... '.encode('utf-8'))
                  
                 except Exception as e:
+                    monitor = get_temp_monitor(TEMP_MONITORS, sock)
+                    TEMP_MONITORS.remove(monitor)
                     traceback.print_exc()
                     print("Client (%s, %s) is offline" % addr)
                     sock.close()
