@@ -16,8 +16,11 @@ GRAPH_WAIT_TIME = 5
 def update_line():
     plt.clf()
     for monitor in TEMP_MONITORS:
-        plt.plot(range(len(monitor.temps)), monitor.temps)
-        plt.pause(0.05)
+        plt.plot(range(len(monitor.temps)), monitor.temps, label=monitor.number)
+    leg = plt.legend(loc="upper right", shadow=True, fancybox=True)
+    leg.get_frame().set_alpha(0.5)
+    plt.title("Monitor de temperatura")
+    plt.pause(0.05)
 
 
 def get_temp_monitor(monitors, socket):
@@ -47,15 +50,6 @@ class TempMonitor():
     def log_temperature(self, temp):
         self.temps.append(float(temp))
 
-    def update_line(self):
-        plt.clf()
-        plt.title("Monitor de temperatura")
-        for monitor in TEMP_MONITORS:
-            plt.plot(range(len(monitor.temps)), monitor.temps, label="test")
-        plt.legend(["test"])
-        # plt.show()
-        print("ta aqui")
-        plt.pause(0.05)
 
   
 if __name__ == "__main__":
