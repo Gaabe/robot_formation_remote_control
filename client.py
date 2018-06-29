@@ -9,6 +9,7 @@ if __name__ == '__main__':
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	sock.connect(server_address)
 	print("Connected to the server")
+	sock.sendall("id0".encode('utf-8'))
 	while True:
 		# msg = str(input("Send your message to the server: "))
 		msg = str(random.randint(0, 60))

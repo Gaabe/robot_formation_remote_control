@@ -9,7 +9,7 @@ import time
 CONNECTION_LIST = []
 TEMP_MONITORS = []
 RECV_BUFFER = 4096
-PORT = 4001
+PORT = 5000
 GRAPH_WAIT_TIME = 5
 
 
@@ -42,6 +42,7 @@ class TempMonitor():
     def __init__(self, socket):
         self.temps = deque(30*[0], 30)
         self.socket = socket
+        self.number = None
 
     def log_temperature(self, temp):
         self.temps.append(float(temp))
@@ -49,8 +50,11 @@ class TempMonitor():
     def update_line(self):
         plt.clf()
         for monitor in TEMP_MONITORS:
-            plt.plot(range(len(monitor.temps)), monitor.temps)
-            plt.pause(0.05)
+            plt.plot(range(len(monitor.temps)), monitor.temps, label="test")
+        plt.legend(loc='upper left')
+        plt.ylim(-1.5, 2.0)
+        plt.show()
+        # plt.pause(0.05)
 
   
 if __name__ == "__main__":
@@ -80,7 +84,6 @@ if __name__ == "__main__":
                 sockfd, addr = server_socket.accept()
                 CONNECTION_LIST.append(sockfd)
                 monitor = TempMonitor(sockfd)
-                monitor.number = assign_new_monitor_number(TEMP_MONITORS)
                 TEMP_MONITORS.append(monitor)
                 print("Client (%s, %s) connected" % addr)
                  
@@ -88,10 +91,14 @@ if __name__ == "__main__":
                 try:
                     data = sock.recv(RECV_BUFFER)
                     monitor = get_temp_monitor(TEMP_MONITORS, sock)
-                    monitor.log_temperature(data)
-                    print("Received {data} from monitor {monitor}".format(data=data, monitor=monitor.number))
-                    if data:
-                        sock.send('OK ... '.encode('utf-8'))
+                    if not monitor.number:
+                        monitor.number = data[:3]
+                        sock.send('Temperature monitor registered'.encode('utf-8'))
+                    else:
+                        monitor.log_temperature(data)
+                        print("Received {data} from monitor {monitor}".format(data=data, monitor=monitor.number))
+                        if data:
+                            sock.send('OK ... '.encode('utf-8'))
                  
                 except Exception as e:
                     monitor = get_temp_monitor(TEMP_MONITORS, sock)
