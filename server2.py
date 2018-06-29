@@ -49,12 +49,13 @@ class TempMonitor():
 
     def update_line(self):
         plt.clf()
+        plt.title("Monitor de temperatura")
         for monitor in TEMP_MONITORS:
             plt.plot(range(len(monitor.temps)), monitor.temps, label="test")
-        plt.legend(loc='upper left')
-        plt.ylim(-1.5, 2.0)
-        plt.show()
-        # plt.pause(0.05)
+        plt.legend(["test"])
+        # plt.show()
+        print("ta aqui")
+        plt.pause(0.05)
 
   
 if __name__ == "__main__":
@@ -93,7 +94,7 @@ if __name__ == "__main__":
                     monitor = get_temp_monitor(TEMP_MONITORS, sock)
                     if not monitor.number:
                         monitor.number = data[:3]
-                        sock.send('Temperature monitor registered'.encode('utf-8'))
+                        sock.send('OK1'.encode('utf-8'))
                     else:
                         monitor.log_temperature(data)
                         print("Received {data} from monitor {monitor}".format(data=data, monitor=monitor.number))
