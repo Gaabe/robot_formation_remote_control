@@ -1,15 +1,23 @@
-# Socket server in python using select function
- 
 import socket, select
 import traceback
 from collections import deque
 import matplotlib.pyplot as plt
+from threading import Thread
+import time
 
     
 CONNECTION_LIST = []
 TEMP_MONITORS = []
 RECV_BUFFER = 4096
 PORT = 4001
+GRAPH_WAIT_TIME = 5
+
+
+def update_line():
+    plt.clf()
+    for monitor in TEMP_MONITORS:
+        plt.plot(range(len(monitor.temps)), monitor.temps)
+        plt.pause(0.05)
 
 
 def get_temp_monitor(monitors, socket):
@@ -55,8 +63,15 @@ if __name__ == "__main__":
     CONNECTION_LIST.append(server_socket)
  
     print("Server started on port " + str(PORT))
+
+    last_time = time.time()
  
     while 1:
+
+        if time.time() - last_time >= GRAPH_WAIT_TIME:
+            update_line()
+            last_time = time.time()
+
         read_sockets,write_sockets,error_sockets = select.select(CONNECTION_LIST,[],[])
  
         for sock in read_sockets:
@@ -74,7 +89,6 @@ if __name__ == "__main__":
                     data = sock.recv(RECV_BUFFER)
                     monitor = get_temp_monitor(TEMP_MONITORS, sock)
                     monitor.log_temperature(data)
-                    monitor.update_line()
                     print("Received {data} from monitor {monitor}".format(data=data, monitor=monitor.number))
                     if data:
                         sock.send('OK ... '.encode('utf-8'))

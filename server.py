@@ -75,7 +75,7 @@ class ServerThread(Thread):
 	 
  
 if __name__ == '__main__':
-	temp_monitor_server = ServerThread(5555)
+	temp_monitor_server = ServerThread(5500)
 	temp_monitor_server.setName('Temperature Monitor Server')
 
 
