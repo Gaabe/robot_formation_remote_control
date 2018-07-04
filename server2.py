@@ -4,13 +4,16 @@ from collections import deque
 import matplotlib.pyplot as plt
 from threading import Thread
 import time
+import serial
 
     
 CONNECTION_LIST = []
 TEMP_MONITORS = []
 RECV_BUFFER = 4096
 PORT = 5000
-GRAPH_WAIT_TIME = 5
+GRAPH_WAIT_TIME = 3
+USB_PORT = "/dev/ttyUSB0"
+MAX_TEMP = 45
 
 
 def update_line():
@@ -20,6 +23,7 @@ def update_line():
     leg = plt.legend(loc="upper right", shadow=True, fancybox=True)
     leg.get_frame().set_alpha(0.5)
     plt.title("Monitor de temperatura")
+    plt.ylim(0, 150)
     plt.pause(0.05)
 
 
@@ -45,14 +49,24 @@ class TempMonitor():
     def __init__(self, socket):
         self.temps = deque(30*[0], 30)
         self.socket = socket
-        self.number = None
+        self.number = ""
 
     def log_temperature(self, temp):
         self.temps.append(float(temp))
 
+    def check_and_notify(self, serial, temp):
+        if float(temp) > MAX_TEMP:
+            print("warning robots")
+            serial.write(self.number.encode("utf-8"))
+
 
   
 if __name__ == "__main__":
+
+    serial = serial.Serial(USB_PORT, 57600)
+
+    if not serial.isOpen():
+        serial.open()
          
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -87,10 +101,11 @@ if __name__ == "__main__":
                     data = sock.recv(RECV_BUFFER)
                     monitor = get_temp_monitor(TEMP_MONITORS, sock)
                     if not monitor.number:
-                        monitor.number = data[:3]
+                        monitor.number = data.decode("utf-8")[:3]
                         sock.send('OK1'.encode('utf-8'))
                     else:
                         monitor.log_temperature(data)
+                        monitor.check_and_notify(serial, data)
                         print("Received {data} from monitor {monitor}".format(data=data, monitor=monitor.number))
                         if data:
                             sock.send('OK ... '.encode('utf-8'))
