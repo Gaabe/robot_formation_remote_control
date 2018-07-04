@@ -33,7 +33,7 @@ void setup(void)
 }
 void loop(void)
 {
-  forward (255,255);
+  forward (70,70);
   rawsensorValueEsq = analogRead(0);
   rawsensorValueDir = analogRead(1);
   if (rawsensorValueEsq < 600){  //Min value is 400 an
@@ -51,8 +51,12 @@ void loop(void)
     fimVoltaesq = millis();
     periodoesq = (fimVoltaesq - inicioVoltaesq)/1000.;
     velocidadeesq = dist/periodoesq;
-    Serial.print("Velocidade esquerda(cm/s)    ");
-    Serial.println(velocidadeesq);
+    if (velocidadeesq<3){
+      velocidadeesq=0;
+    }
+    }
+    //Serial.print("Velocidade esquerda(cm/s)    ");
+    //Serial.println(velocidadeesq);
     inicioVoltaesq = fimVoltaesq;
   }
 
@@ -71,6 +75,10 @@ void loop(void)
     fimVoltadir = millis();
     periododir = (fimVoltadir - inicioVoltadir)/1000.;
     velocidadedir = dist/periododir;
+    if (velocidadedir<3){
+      velocidadedir=0;
+    }
+    }
     Serial.print("Velocidade direita(cm/s)    ");
     Serial.println(velocidadedir);
     inicioVoltadir = fimVoltadir;
