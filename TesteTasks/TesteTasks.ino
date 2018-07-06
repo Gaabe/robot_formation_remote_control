@@ -4,7 +4,7 @@
 
 unsigned long ulIdleCycleCount = 0UL;
 
-void vTaskFunction( void *pvParameters)
+void checkVel( void *pvParameters)
 {
   char *pcTaskName;
 
@@ -35,8 +35,8 @@ void setup() {
   static const char *pcTextForTask1 = "0\r\n";
   static const char *pcTextForTask2 = "1\t\n";
   //coloquei as tasks com prioridades diferentes
-  xTaskCreate(vTaskFunction, "Velocímetro", 128, (void*)pcTextForTask1, 1, NULL); 
-  xTaskCreate(vTaskFunction, "Task 2", 128, (void*)pcTextForTask2, 2, NULL);
+  xTaskCreate(checkVel, "Velocímetro", 128, (void*)pcTextForTask1, 1, NULL); 
+  xTaskCreate(checkVel, "Task 2", 128, (void*)pcTextForTask2, 2, NULL);
 
   vTaskStartScheduler();
 
