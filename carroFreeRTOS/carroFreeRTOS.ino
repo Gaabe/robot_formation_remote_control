@@ -13,20 +13,21 @@ int M2 = 7; //M2 Direction Control
 long fimVoltaEsq;
 long inicioVoltaEsq;
 int countEsq;
+long ultimaVoltaCompletada;
 
 void checkVel( void *pvParameters)
 {
   char *pcTaskName;
   pcTaskName = (char *) pvParameters;
-  for(;;)
-  {
-    //Serial.print("Task 1");
+  for(;;){
     char dist = 9;
     int sensorCountEsq0;
     int sensorCountEsq1;
     float velocidadeEsq;
     float periodoEsq;
-    
+    if((millis()-ultimaVoltaCompletada)>2000){
+      velocidadeEsq = 0;
+    }    
     int rawSensorValueEsq = analogRead(1);
     if (rawSensorValueEsq < 650){  //Min value is 400 an
       sensorCountEsq1 = 1;
@@ -47,17 +48,17 @@ void checkVel( void *pvParameters)
     fimVoltaEsq = millis();
     
     float periodoEsq = (fimVoltaEsq - inicioVoltaEsq)/1000.;
-    Serial.print("Periodo: ");
-    Serial.println(periodoEsq);
-    velocidadeEsq = dist/periodoEsq;
-    if (velocidadeEsq<3){
-      velocidadeEsq=0;
-    }
-    //Serial.print("Velocidade esquerda(cm/s)    ");
-    //Serial.println(velocidadeEsq);
+    //Serial.print("Periodo: ");
+    //Serial.println(periodoEsq);
     inicioVoltaEsq = fimVoltaEsq;
+    velocidadeEsq = dist/periodoEsq;
+    ultimaVoltaCompletada = millis();
   }
-  vTaskDelay(50/portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
+    //Serial.print("Diferenca de voltas: ");
+    //Serial.println(millis()-ultimaVoltaCompletada);
+    //Serial.print("Velocidade esquerda(cm/s)    ");
+    Serial.println(velocidadeEsq);
+  vTaskDelay(5/portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
   }
 }
 
