@@ -35,7 +35,7 @@ void setup() {
   static const char *pcTextForTask1 = "0\r\n";
   static const char *pcTextForTask2 = "1\t\n";
   //coloquei as tasks com prioridades diferentes
-  xTaskCreate(vTaskFunction, "Task 1", 128, (void*)pcTextForTask1, 1, NULL); 
+  xTaskCreate(vTaskFunction, "Velocímetro", 128, (void*)pcTextForTask1, 1, NULL); 
   xTaskCreate(vTaskFunction, "Task 2", 128, (void*)pcTextForTask2, 2, NULL);
 
   vTaskStartScheduler();

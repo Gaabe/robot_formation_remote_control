@@ -31,6 +31,7 @@ void setup(void)
   inicioVoltaesq = millis();
   inicioVoltadir = millis();
 }
+
 void loop(void)
 {
   forward (70,70);
@@ -53,7 +54,6 @@ void loop(void)
     velocidadeesq = dist/periodoesq;
     if (velocidadeesq<3){
       velocidadeesq=0;
-    }
     }
     //Serial.print("Velocidade esquerda(cm/s)    ");
     //Serial.println(velocidadeesq);
@@ -78,58 +78,15 @@ void loop(void)
     if (velocidadedir<3){
       velocidadedir=0;
     }
-    }
     Serial.print("Velocidade direita(cm/s)    ");
     Serial.println(velocidadedir);
     inicioVoltadir = fimVoltadir;
   }
 }
-  /* }
-  if (sensorcountdir1 != sensorcountdir0){
-    countdir ++;
-  }
-  sensorcountdir0 = sensorcountdir1;
-  if (countdir==8){
-    countdir = 0; 
-    fimVoltadir = millis();
-    periododir = (fimVoltadir - inicioVoltadir)/1000.;
-    velocidadedir = dist/periododir;
-    Serial.print("Velocidade direita(cm/s)    ");
-    Serial.println(velocidadedir);
-    inicioVoltadir = fimVoltadir;
-  while (Serial.available() < 1) {} // Wait until a character is received
-    Serial.println("Entrou no while");
-    char val = Serial.read();
-    int leftspeed = 255;  //255 is maximum speed 
-    int rightspeed = 255;
-    switch(val) // Perform an action depending on the command
-    {
-    case 'w'://Move Forward
-      forward (leftspeed,rightspeed);
-      Serial.println("Pra frente");
-      break;
-    case 's'://Move Backwards
-      reverse (leftspeed,rightspeed);
-      Serial.println("Pra trás");
-      break;
-    case 'a'://Turn Left
-      left (leftspeed,rightspeed);
-      Serial.println("Pra esquerda");
-      break;
-    case 'd'://Turn Right
-      right (leftspeed,rightspeed);
-      Serial.println("Pra direita");
-      break;
-    //default:
-    //  stop();
-    //  break;
-  }  
-  */
 void stop(void) //Stop
 {
   digitalWrite(E1,LOW);
-  digitalWrite(E2,LOW);
-  
+  digitalWrite(E2,LOW);  
   
 }
 void forward(char a,char b)
