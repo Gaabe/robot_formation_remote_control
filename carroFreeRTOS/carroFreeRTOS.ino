@@ -2,6 +2,13 @@
 //#include <semphr.h>
 //#include <task.h>
 
+/* TODO
+ * ADICIONAR PID AS RODAS
+ * ADICIONAR CONTROLE DE POSICAO 
+ * ENVIAR MSGS PELO XBEE
+ * ADICIONAR CONTROLE DE TIME
+ */
+
 unsigned long ulIdleCycleCount = 0UL;
 
 // declarações de pinos
@@ -15,50 +22,42 @@ long inicioVoltaEsq;
 int countEsq;
 long ultimaVoltaCompletada;
 
-void checkVel( void *pvParameters)
-{
+oid checkVel( void *pvParameters){
+  float lastT1 = 0, T1 = 0, T2 = 0;
+  boolean highFlag, lowFlag;
+  if (analogRead(0) < 650){
+    highFlag = false;
+    lowFlag = true;
+  }
+  else{
+    highFlag = true;
+    lowFlag = false;
+  }
   char *pcTaskName;
+  int rawSensorValueEsq;
+  char dist = 11;
+  boolean sensorTrig = false;
+  boolean sensorFlag = false;
+  float periodoEsq;
   pcTaskName = (char *) pvParameters;
   for(;;){
-    char dist = 9;
-    int sensorCountEsq0;
-    int sensorCountEsq1;
-    float velocidadeEsq;
-    float periodoEsq;
-    if((millis()-ultimaVoltaCompletada)>2000){
+    if((millis()-lastT1)>5000){
       velocidadeEsq = 0;
-    }    
-    int rawSensorValueEsq = analogRead(1);
-    if (rawSensorValueEsq < 650){  //Min value is 400 an
-      sensorCountEsq1 = 1;
-      //Serial.print("Menor que 650  ");
-      //Serial.println(sensorCountEsq1);
-  }
-    else {
-      sensorCountEsq1 = 0;
-      //Serial.print("Maior que 650   ");
-      //Serial.println(sensorCountEsq1);
-  }
-  if (sensorCountEsq1 != sensorCountEsq0){
-    countEsq ++;
-  }
-  sensorCountEsq0 = sensorCountEsq1;
-  if (countEsq==8){
-    countEsq = 0; 
-    fimVoltaEsq = millis();
-    
-    float periodoEsq = (fimVoltaEsq - inicioVoltaEsq)/1000.;
-    //Serial.print("Periodo: ");
-    //Serial.println(periodoEsq);
-    inicioVoltaEsq = fimVoltaEsq;
-    velocidadeEsq = dist/periodoEsq;
-    ultimaVoltaCompletada = millis();
-  }
-    //Serial.print("Diferenca de voltas: ");
-    //Serial.println(millis()-ultimaVoltaCompletada);
-    //Serial.print("Velocidade esquerda(cm/s)    ");
-    Serial.println(velocidadeEsq);
-  vTaskDelay(5/portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
+    }
+    rawSensorValueEsq = analogRead(0);
+    if (rawSensorValueEsq < 650 && highFlag && millis()-T2 > 30){  //Min value is 400 an
+      T1 = millis();
+      velocidadeEsq = (dist/8)/((T1 - lastT1)/1000);
+      lastT1 = T1;
+      highFlag = false;
+      lowFlag = true;
+    }
+    if(rawSensorValueEsq > 650 && lowFlag && millis()-T1 > 30){
+      highFlag = true;
+      lowFlag = false;
+      T2 = millis();
+    }
+    vTaskDelay(50/portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
   }
 }
 
@@ -69,7 +68,7 @@ void vApplicationIdleHook(void)
 
 void setup() {
 
-  Serial.begin(115200);
+  Serial.begin(57600);
   analogWrite (E1,255);
   digitalWrite(M1,LOW);
   analogWrite (E2, 255);
