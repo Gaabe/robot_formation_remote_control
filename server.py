@@ -87,7 +87,7 @@ def update_graph():
 
     ax2 = fig.add_subplot(212)
     update_heatmap()
-    ax = sns.heatmap(HEAT_MAP, vmin=20, vmax=200, linewidth=0.5, square=True)
+    ax = sns.heatmap(HEAT_MAP, vmin=20, vmax=200, square=True)
     plt.pause(0.05)
 
 
