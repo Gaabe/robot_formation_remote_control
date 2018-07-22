@@ -33,7 +33,7 @@ sensor2_pos=(8, 4)
 sensor3_pos=(4, 0)
 
 sensors_pos = (sensor0_pos, sensor1_pos, sensor2_pos, sensor3_pos)
-TEMP_CONST = 0.02
+TEMP_CONST = 0.002
 
 def pretty_print(matrix):
     s = [[str(e) for e in row] for row in matrix]
@@ -68,11 +68,11 @@ def update_heatmap():
             HEAT_MAP[8][4] = monitor.temps[29]
         elif monitor.number == "id3":
             HEAT_MAP[4][0] = monitor.temps[29]
-    print("antes:")
-    pretty_print(HEAT_MAP)
+    # print("antes:")
+    # pretty_print(HEAT_MAP)
     interpolate_heatmap()
-    print("depois:")
-    pretty_print(HEAT_MAP)
+    # print("depois:")
+    # pretty_print(HEAT_MAP)
 
 
 def update_graph():
@@ -87,7 +87,7 @@ def update_graph():
 
     ax2 = fig.add_subplot(212)
     update_heatmap()
-    ax = sns.heatmap(HEAT_MAP, vmin=20, vmax=200, linewidth=0.5)
+    ax = sns.heatmap(HEAT_MAP, vmin=20, vmax=200, linewidth=0.5, square=True)
     plt.pause(0.05)
 
 
