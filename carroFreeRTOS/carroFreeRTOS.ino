@@ -1,6 +1,8 @@
 #include <Arduino_FreeRTOS.h>
 #include <semphr.h>
 //#include <task.h>
+#define direita 0
+#define esquerda 1
 
 /* TODO
  * ADICIONAR PID AS RODAS
@@ -12,13 +14,14 @@
 unsigned long ulIdleCycleCount = 0UL;
 
 // declarações de pinos
-int E1 = 6; //M1 Speed Control
-int E2 = 5; //M2 Speed Control
-int M1 = 8; //M1 Direction Control
-int M2 = 7; //M2 Direction Control
+int setVelEsq = 6; //M1 Speed Control
+int setVelDir = 5; //M0 Speed Control
+int setSentidoEsq = 8; //M1 Direction Control
+int setSentidoDir = 7; //M0 Direction Control
 
-int Kp = 1, Ki = 1;
+int Kp = 1, Ki = 5;
 
+SemaphoreHandle_t xSerialSemaphore;
 
 QueueHandle_t xVelocidadeEsq;
 QueueHandle_t xVelocidadeDir;
@@ -61,7 +64,13 @@ void checkVel( void *pvParameters){
       rawSensorValue = analogRead(motor);
       if (rawSensorValue < 650 && highFlag && millis()-T2 > 30){  //Min value is 400 an
         T1 = millis();
-        velocidade = (dist/8)/((T1 - lastT1)/1000);
+        velocidade = 10*(dist/8)/((T1 - lastT1)/1000);
+        if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
+        { 
+          Serial.print("velocidade: ");
+          Serial.println(velocidade);
+          xSemaphoreGive(xSerialSemaphore);
+        }
         lastT1 = T1;
         highFlag = false;
         lowFlag = true;
@@ -74,73 +83,36 @@ void checkVel( void *pvParameters){
       //Serial.print("Valor real:");
       //Serial.println(velocidade);
   
-      if (motor==0){
+      if (motor==esquerda){
         xStatus = xQueueSendToBack( xVelocidadeEsq, &velocidade, 5 );
-        xStatus = xQueueSendToBack( xSerialVelEsq, &velocidade, 5 );
+        if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
+        { 
+          //Serial.println("Enviando velocidade da roda esquerda para queue");
+          //Serial.println(velocidade);
+          xSemaphoreGive(xSerialSemaphore);
+        }
       }
       else {
         xStatus = xQueueSendToBack( xVelocidadeDir, &velocidade, 5 );  
-        xStatus = xQueueSendToBack( xSerialVelDir, &velocidade, 5 );
+        if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
+        { 
+          Serial.print("Enviando velocidade da roda direita para queue");
+          xSemaphoreGive(xSerialSemaphore);
+        }
       }
       if( xStatus != pdPASS )
       {
-        /* The send operation could not complete because the queue was full -
-        this must be an error as the queue should never contain more than
-        one item! */
-        //Serial.println( "Could not send to the queue.\r\n" );
-        //Serial.println('0');
+        if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
+        { 
+          //Serial.println("Não conseguiu mandar a velocidade para a fila");
+          xSemaphoreGive(xSerialSemaphore);
+        }
       }
       vTaskDelay(50/portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
     }
   }
 }
 
-
-//static void vReceiverTask( void *pvParameters )
-//{
-//  /* Declare the variable that will hold the values received from the queue. */
-//  float lReceivedValue;
-//  portBASE_TYPE xStatus;
-//  /* This task is also defined within an infinite loop. */
-//  for( ;; )
-//  {
-//    /* This call should always find the queue empty because this task will
-//    immediately remove any data that is written to the queue. */
-//    if( uxQueueMessagesWaiting( xQueue ) == 0 )
-//    {
-//      //Serial.println( "Queue vazia" );
-//    }
-//    /* Receive data from the queue.
-//    The first parameter is the queue from which data is to be received. The
-//    queue is created before the scheduler is started, and therefore before this
-//    task runs for the first time.
-//    The second parameter is the buffer into which the received data will be
-//    placed. In this case the buffer is simply the address of a variable that
-//    has the required size to hold the received data.
-//    The last parameter is the block time – the maximum amount of time that the
-//    task should remain in the Blocked state to wait for data to be available
-//    should the queue already be empty. In this case the constant
-//    portTICK_RATE_MS is used to convert 100 milliseconds to a time specified in
-//    ticks. */
-//    xStatus = xQueueReceive( xQueue, &lReceivedValue, 100/portTICK_PERIOD_MS);
-//    if( xStatus == pdPASS )
-//    {
-//      /* Data was successfully received from the queue, print out the received
-//      value. */
-//      //Serial.print("Received = ");
-//      //Serial.println(lReceivedValue);
-//    }
-//    else
-//    {
-//      /* Data was not received from the queue even after waiting for 100ms.
-//      This must be an error as the sending tasks are free running and will be
-//      continuously writing to the queue. */
-//      //Serial.println( "Could not receive from the queue.\r\n" );
-//    }
-//    Serial.println('0');
-//    vTaskDelay(1000/portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
-//  }
-//}
 
 
 //Calculates the PI parameter
@@ -149,62 +121,105 @@ void calcPID( void *pvParameters){
   float velEsq;
   int IEsq = 0;
   int IDir = 0;
-  int SP1 = 5;
-  int SP2 = 5;
+  int SPDir =50;
+  int SPEsq = 50;
   
   for (;;) // A Task shall never return or exit.
   {
   portBASE_TYPE xStatus;
 ///  xStatus = xQueueReceive(xGen, &SP1, 10/portTICK_PERIOD_MS);
  // xStatus = xQueueReceive(xGen, &SP2, 10/portTICK_PERIOD_MS);
-//  xStatus = xQueueReceive(xVelocidadeEsq, &velEsq, 10/portTICK_PERIOD_MS);
+  xStatus = xQueueReceive(xVelocidadeEsq, &velEsq, 10/portTICK_PERIOD_MS);
   xStatus = xQueueReceive(xGen, &IEsq, 10/portTICK_PERIOD_MS);
-//  xStatus = xQueueReceive(xVelocidadeDir, &velDir, 10/portTICK_PERIOD_MS);
-    if( xStatus == pdPASS )
-      Serial.println("Não Leu");
-  int E = SP1 - velEsq;
+  xStatus = xQueueReceive(xGen, &IDir, 10/portTICK_PERIOD_MS);
+  xStatus = xQueueReceive(xVelocidadeDir, &velDir, 10/portTICK_PERIOD_MS);
+    //if( xStatus == pdPASS )
+      //Serial.println("Não Leu");
+  int E = SPEsq - velEsq;
   int P = Kp*E;
-  
-    Serial.print(" | IEsq1 ");
-    Serial.print(IEsq);
-    IEsq = IEsq + (0.5*E)*Ki;
-    Serial.print(" | IEsq2 ");
-    Serial.print(IEsq);
-    int pwm = P + IEsq;
-    analogWrite (E1, pwm);
+  IEsq = IEsq + (0.5*E)*Ki;
+  int pwm = P + IEsq;
+  //analogWrite (E1, pwm);
+  //E = SP2 - velDir;
+  pwm = P + IEsq;
+  if (pwm>255){
+    pwm = 255;
+  }
+  if (pwm<0){
+    pwm = 0;
+  }
+  if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
+  { 
     Serial.print(" | pwmEsq ");
     Serial.print(pwm);
-    E = SP2 - velDir;
-    P = Kp*E;
-    /*
-    Serial.print(" | IDir1 ");
-    Serial.print(IDir);
-    */
-    IDir = IDir + (0.5*E)*Ki;
-    Serial.print(" | IDir2 ");
-    Serial.print(IDir);
-    pwm = P + IDir;
-    analogWrite (E2, pwm);
+    Serial.print(" | iEsq ");
+    Serial.print(IEsq);
+    Serial.print(" | VelEsq");
+    Serial.print(velEsq);
+    Serial.print(" | SPEsq");
+    Serial.print(SPEsq);
+    Serial.print(" | EEsq ");
+    Serial.println(E);
+    xSemaphoreGive(xSerialSemaphore);
+  }
+  analogWrite (setVelEsq, pwm);
+
+        //Serial.println("Não Leu");
+  E = SPDir - velDir;
+  P = Kp*E;
+  IDir = IDir + (0.5*E)*Ki;
+  pwm = P + IEsq;
+  //analogWrite (E1, pwm);
+  //E = SP2 - velDir;
+  pwm = P + IDir;
+  if (pwm>255){
+    pwm = 255;
+  }
+  if (pwm<0){
+    pwm = 0;
+  }
+  if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
+  { 
     Serial.print(" | pwmDir ");
     Serial.print(pwm);
-    Serial.print(" | SPE ");
-    Serial.print(SP1);
-    Serial.print(" | SPD ");
-    Serial.print(SP2);
-    Serial.print(" | IDir ");
+    Serial.print(" | iDir ");
     Serial.print(IDir);
-    Serial.print(" | IEsq ");
-    Serial.println(IEsq);
-  //  xStatus = xQueueSendToBack( xGen, &SP1, 0);
-  //  xStatus = xQueueSendToBack( xGen, &SP2, 0);
-    xStatus = xQueueSendToBack( xGen, &IEsq, 0);
-  //  xStatus = xQueueSendToBack( xGen, &IDir, 0);
-    if( xStatus != pdPASS )
-      Serial.println("Deu Merda");
-    xStatus = xQueueSendToBack( xGen, &IDir, 0);
-    if( xStatus != pdPASS )
-      Serial.println("fila chea");
-    vTaskDelay(500/portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
+    Serial.print(" | VelDir");
+    Serial.print(velDir);
+    Serial.print(" | SPDir");
+    Serial.print(SPDir);
+    Serial.print(" | EDir ");
+    Serial.println(E);
+    xSemaphoreGive(xSerialSemaphore);
+  }
+  analogWrite (setVelDir, pwm);
+
+
+
+
+  
+  //Serial.print(" | pwmDir ");
+  //Serial.print(pwm);
+  //Serial.print(" | SPE ");
+  //Serial.print(SP1);
+  //Serial.print(" | SPD ");
+  //Serial.print(SP2);
+  //Serial.print(" | IDir ");
+  //Serial.print(IDir);
+  //Serial.print(" | IEs");
+  //Serial.println(IEsq);
+//  xStatus = xQueueSendToBack( xGen, &SP1, 0);
+//  xStatus = xQueueSendToBack( xGen, &SP2, 0);
+  //Serial.println("Enviando valor de IEsq para xGen");
+  xStatus = xQueueSendToBack( xGen, &IEsq, 0);
+  //if( xStatus != pdPASS )
+    //Serial.println("Deu Merda, fila cheia");
+  //else
+    //Serial.println("qwertyuiopa");
+  xStatus = xQueueSendToBack( xGen, &IDir, 0);
+
+    //taskYIELD();
+  vTaskDelay(500/portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
   }
 }
 
@@ -217,6 +232,19 @@ void vApplicationIdleHook(void)
 void setup() {
   
   Serial.begin(57600);
+  while (!Serial){}
+
+  // Semaphores are useful to stop a Task proceeding, where it should be paused to wait,
+  // because it is sharing a resource, such as the Serial port.
+  // Semaphores should only be used whilst the scheduler is running, but we can set it up here.
+  if ( xSerialSemaphore == NULL )  // Check to confirm that the Serial Semaphore has not already been created.
+  {
+    xSerialSemaphore = xSemaphoreCreateMutex();  // Create a mutex semaphore we will use to manage the Serial Port
+    if ( ( xSerialSemaphore ) != NULL )
+      xSemaphoreGive( ( xSerialSemaphore ) );  // Make the Serial Port available for use, by "Giving" the Semaphore.
+  }
+  
+  Serial.println("Inicializando código");
 //  analogWrite (E1,255);
 //  digitalWrite(M1,LOW);
 //  analogWrite (E2, 255);
@@ -252,13 +280,13 @@ void setup() {
     so one task will continuously write 100 to the queue while the other task
     will continuously write 200 to the queue. Both tasks are created at
     priority 1. */
-    xTaskCreate(checkVel, "Velocímetro Esquerda", 128, (void *) 0, 1, NULL); 
-    xTaskCreate(checkVel, "Velocímetro Direita", 128, (void *) 1, 1, NULL); 
+    xTaskCreate(checkVel, "Velocímetro Esquerda", 128, (void *) 1, 2, NULL); 
+    //xTaskCreate(checkVel, "Velocímetro Direita", 128, (void *) 0, 2, NULL); 
     /* Create the task that will read from the queue. The task is created with
     priority 2, so above the priority of the sender tasks. */
-//    xTaskCreate(vReceiverTask, "Receiver", 128, NULL, 2, NULL );
+//    xTaskCreate(vReceiverTask, "Receiver", 128, NULL, 1, NULL );
  
-    xTaskCreate(calcPID, "PID", 128, NULL, 2, NULL); 
+    xTaskCreate(calcPID, "PID", 128, NULL, 1, NULL); 
     
     /* Start the scheduler so the created tasks start executing. */
 
