@@ -32,16 +32,17 @@ QueueHandle_t xGen;
 
 
 void checkVel( void *pvParameters){
+  if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
+        { 
+          Serial.println("check vel chamada");
+          xSemaphoreGive(xSerialSemaphore);
+        }
   int motor = (int)pvParameters;
   portBASE_TYPE xStatus;
   float velocidade = 0;
   
   float lastT1 = 0, T1 = 0, T2 = 0;
   boolean highFlag, lowFlag;
-
-
-  for (;;) // A Task shall never return or exit.
-  {
     if (analogRead(motor) < 650){
       highFlag = false;
       lowFlag = true;
@@ -58,17 +59,35 @@ void checkVel( void *pvParameters){
     float periodo;
     pcTaskName = (char *) pvParameters;
     for(;;){
+      if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
+        { 
+          //Serial.println("estamos na check vel");
+          xSemaphoreGive(xSerialSemaphore);
+        }
       if((millis()-lastT1)>5000){
         velocidade = 0;
       }
       rawSensorValue = analogRead(motor);
+
+      if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
+        { 
+          Serial.println("antes do outro if");
+          Serial.println(rawSensorValue);
+          xSemaphoreGive(xSerialSemaphore);
+        }
+      
       if (rawSensorValue < 650 && highFlag && millis()-T2 > 30){  //Min value is 400 an
         T1 = millis();
         velocidade = 10*(dist/8)/((T1 - lastT1)/1000);
+        
         if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
         { 
-          Serial.print("velocidade: ");
-          Serial.println(velocidade);
+          if(motor == 1)
+            //  Serial.print("velE: ");
+          if(motor == 0)
+            //  Serial.print("velD: ");
+
+          //Serial.println(velocidade);
           xSemaphoreGive(xSerialSemaphore);
         }
         lastT1 = T1;
@@ -84,7 +103,7 @@ void checkVel( void *pvParameters){
       //Serial.println(velocidade);
   
       if (motor==esquerda){
-        xStatus = xQueueSendToBack( xVelocidadeEsq, &velocidade, 5 );
+        xStatus = xQueueSendToBack( xVelocidadeEsq, &velocidade, 0);
         if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
         { 
           //Serial.println("Enviando velocidade da roda esquerda para queue");
@@ -93,10 +112,10 @@ void checkVel( void *pvParameters){
         }
       }
       else {
-        xStatus = xQueueSendToBack( xVelocidadeDir, &velocidade, 5 );  
+        xStatus = xQueueSendToBack( xVelocidadeDir, &velocidade, 0);  
         if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
         { 
-          Serial.print("Enviando velocidade da roda direita para queue");
+          //Serial.print("Enviando velocidade da roda direita para queue");
           xSemaphoreGive(xSerialSemaphore);
         }
       }
@@ -110,7 +129,7 @@ void checkVel( void *pvParameters){
       }
       vTaskDelay(50/portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
     }
-  }
+  
 }
 
 
@@ -150,16 +169,16 @@ void calcPID( void *pvParameters){
   }
   if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
   { 
-    Serial.print(" | pwmEsq ");
-    Serial.print(pwm);
-    Serial.print(" | iEsq ");
-    Serial.print(IEsq);
-    Serial.print(" | VelEsq");
-    Serial.print(velEsq);
-    Serial.print(" | SPEsq");
-    Serial.print(SPEsq);
-    Serial.print(" | EEsq ");
-    Serial.println(E);
+//    Serial.print(" | pwmEsq ");
+//    Serial.print(pwm);
+//    Serial.print(" | iEsq ");
+//    Serial.print(IEsq);
+//    Serial.print(" | VelEsq");
+//    Serial.print(velEsq);
+//    Serial.print(" | SPEsq");
+//    Serial.print(SPEsq);
+//    Serial.print(" | EEsq ");
+//    Serial.println(E);
     xSemaphoreGive(xSerialSemaphore);
   }
   analogWrite (setVelEsq, pwm);
@@ -172,7 +191,7 @@ void calcPID( void *pvParameters){
   //analogWrite (E1, pwm);
   //E = SP2 - velDir;
   pwm = P + IDir;
-  if (pwm>255){
+  if (pwm>255){ 
     pwm = 255;
   }
   if (pwm<0){
@@ -180,16 +199,16 @@ void calcPID( void *pvParameters){
   }
   if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
   { 
-    Serial.print(" | pwmDir ");
-    Serial.print(pwm);
-    Serial.print(" | iDir ");
-    Serial.print(IDir);
-    Serial.print(" | VelDir");
-    Serial.print(velDir);
-    Serial.print(" | SPDir");
-    Serial.print(SPDir);
-    Serial.print(" | EDir ");
-    Serial.println(E);
+//    Serial.print(" | pwmDir ");
+//    Serial.print(pwm);
+//    Serial.print(" | iDir ");
+//    Serial.print(IDir);
+//    Serial.print(" | VelDir");
+//    Serial.print(velDir);
+//    Serial.print(" | SPDir");
+//    Serial.print(SPDir);
+//    Serial.print(" | EDir ");
+//    Serial.println(E);
     xSemaphoreGive(xSerialSemaphore);
   }
   analogWrite (setVelDir, pwm);
@@ -244,7 +263,7 @@ void setup() {
       xSemaphoreGive( ( xSerialSemaphore ) );  // Make the Serial Port available for use, by "Giving" the Semaphore.
   }
   
-  Serial.println("Inicializando código");
+  //Serial.println("Inicializando código");
 //  analogWrite (E1,255);
 //  digitalWrite(M1,LOW);
 //  analogWrite (E2, 255);
@@ -280,8 +299,8 @@ void setup() {
     so one task will continuously write 100 to the queue while the other task
     will continuously write 200 to the queue. Both tasks are created at
     priority 1. */
-    xTaskCreate(checkVel, "Velocímetro Esquerda", 128, (void *) 1, 2, NULL); 
-    //xTaskCreate(checkVel, "Velocímetro Direita", 128, (void *) 0, 2, NULL); 
+    //xTaskCreate(checkVel, "Velocímetro Esquerda", 128, (void *) esquerda, 2, NULL); 
+    xTaskCreate(checkVel, "Velocímetro Direita", 128, (void *) direita, 2, NULL); 
     /* Create the task that will read from the queue. The task is created with
     priority 2, so above the priority of the sender tasks. */
 //    xTaskCreate(vReceiverTask, "Receiver", 128, NULL, 1, NULL );
