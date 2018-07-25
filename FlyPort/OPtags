@@ -1,0 +1,29 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+FlyportTask	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\taskFlyport.c	/^void FlyportTask(){$/;"	kind:f	line:11
+OnConnectionFailed	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\WF_Events.c	/^void OnConnectionFailed(UINT8 ev, UINT16 evinfo)$/;"	kind:f	line:16
+OnConnectionPermLost	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\WF_Events.c	/^void OnConnectionPermLost(UINT8 ev, UINT16 evinfo)$/;"	kind:f	line:34
+OnConnectionReestablished	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\WF_Events.c	/^void OnConnectionReestablished(UINT8 ev, UINT16 evinfo)$/;"	kind:f	line:28
+OnConnectionSuccessful	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\WF_Events.c	/^void OnConnectionSuccessful(UINT8 ev, UINT16 evinfo)$/;"	kind:f	line:9
+OnConnectionTempLost	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\WF_Events.c	/^void OnConnectionTempLost(UINT8 ev, UINT16 evinfo)$/;"	kind:f	line:22
+OnScanResult	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\WF_Events.c	/^void OnScanResult(UINT8 ev, UINT16 evinfo)$/;"	kind:f	line:41
+RxLen	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\taskFlyport.c	/^	int RxLen=0;$/;"	kind:l	line:88
+ScanCompleted	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\WF_Events.c	/^BOOL ScanCompleted = FALSE;$/;"	kind:v	line:7
+adcValue	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\taskFlyport.c	/^	double adcValue[10], temp = 0;$/;"	kind:l	line:17
+bff	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\taskFlyport.c	/^	char bff[250];$/;"	kind:l	line:89
+buf	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\WF_Events.c	/^	char buf[8];$/;"	kind:l	line:44
+buf	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\taskFlyport.c	/^		char buf[4];$/;"	kind:l	line:106
+cnt	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\taskFlyport.c	/^	int cnt = 0, i = 0, pwmValue = 0;$/;"	kind:l	line:15
+flagErr	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\taskFlyport.c	/^	BOOL flagErr = FALSE;$/;"	kind:l	line:16
+i	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\taskFlyport.c	/^	int cnt = 0, i = 0, pwmValue = 0;$/;"	kind:l	line:15
+msg	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\taskFlyport.c	/^	char msg[500];$/;"	kind:l	line:14
+pwmValue	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\taskFlyport.c	/^	int cnt = 0, i = 0, pwmValue = 0;$/;"	kind:l	line:15
+sendTCP	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\taskFlyport.c	/^int sendTCP(char* msg, TCP_SOCKET sock);$/;"	kind:p	line:4	file:
+sendTCP	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\taskFlyport.c	/^int sendTCP(char* msg, TCP_SOCKET sock){$/;"	kind:f	line:87
+sinc	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\taskFlyport.c	/^struct tm sinc;$/;"	kind:v	line:6	typeref:struct:tm
+sock	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\taskFlyport.c	/^	TCP_SOCKET sock = INVALID_SOCKET;$/;"	kind:l	line:13
+temp	C:\Users\aluno\Desktop\legalzão 3\codigo flyport legalzao 2\topicos2\taskFlyport.c	/^	double adcValue[10], temp = 0;$/;"	kind:l	line:17
