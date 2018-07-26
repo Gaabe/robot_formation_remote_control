@@ -14,6 +14,7 @@ TEMP_MONITORS = []
 RECV_BUFFER = 4096
 PORT = 5000
 GRAPH_WAIT_TIME = 1
+UPDATE_TIME_WAIT_TIME = 10
 USB_PORT = "/dev/ttyUSB0"
 MAX_TEMP = 45
 HEAT_MAP = [[26,26,26,26,26,26,26,26,26],
@@ -106,6 +107,11 @@ def assign_new_monitor_number(monitors):
                 number = monitor.number
         return number + 1
 
+def update_time_on_sensors():
+    print("updating time")
+    for temp in TEMP_MONITORS:
+        temp.socket.send(time.strftime('%Y%m%d%H%M%S', time.localtime()).encode('utf-8'))
+
 
 
 class TempMonitor():
@@ -146,13 +152,18 @@ if __name__ == "__main__":
  
     print("Server started on port " + str(PORT))
 
-    last_time = time.time()
+    last_time_graph = time.time()
+    last_time_update_time = time.time()
  
     while 1:
 
-        if time.time() - last_time >= GRAPH_WAIT_TIME:
+        if time.time() - last_time_graph >= GRAPH_WAIT_TIME:
             update_graph()
-            last_time = time.time()
+            last_time_graph = time.time()
+
+        if time.time() - last_time_update_time >= UPDATE_TIME_WAIT_TIME:
+            update_time_on_sensors()
+            last_time_update_time = time.time()
 
         read_sockets,write_sockets,error_sockets = select.select(CONNECTION_LIST,[],[])
  
@@ -177,7 +188,7 @@ if __name__ == "__main__":
                         monitor.check_and_notify(serial, data)
                         print("Received {data} from monitor {monitor}".format(data=data, monitor=monitor.number))
                         if data:
-                            sock.send('OK ... '.encode('utf-8'))
+                            sock.send('OK'.encode('utf-8'))
                  
                 except Exception as e:
                     monitor = get_temp_monitor(TEMP_MONITORS, sock)
