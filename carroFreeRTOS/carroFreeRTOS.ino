@@ -18,8 +18,8 @@
   #define setSentidoDir 7 //M0 Direction Control
   #define dist 11 //Perimetro da roda
 
-  #define Kp 1
-  #define Ki 5
+  #define Kp 3
+  #define Ki 1
   
   unsigned long ulIdleCycleCount = 0UL;
 
@@ -78,6 +78,7 @@
    ******************************************************************************/
   void checkVel( void *pvParameters) {
     vel VEL, aux;
+    int i = 0;
     portBASE_TYPE xStatus;
     float velocidade = 0;
     float lastT1 = 0, T1 = 0, T2 = 0;
@@ -91,6 +92,8 @@
       while(1){
         if ((millis() - lastT1) > 1000) {
           velocidade = 0;
+          lastT1 = millis();
+          break;
         }
         rawSensorValue = analogRead(ENC_ESQ);
 
@@ -108,7 +111,12 @@
           T2 = millis();
         }
       }
-      VEL.esq[VEL.i] = velocidade;
+      VEL.esq[i] = velocidade;
+
+      if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
+      {
+        xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+      }
 
       /*********************************************
        *** CALCULO DA VELOCIDADE DA RODA DIREITA ***
@@ -123,6 +131,8 @@
       while(1){
         if ((millis() - lastT1) > 1000) {
           velocidade = 0;
+          lastT1 = millis();
+          break;
         }
         rawSensorValue = analogRead(ENC_DIR);
 
@@ -140,14 +150,20 @@
           T2 = millis();
         }
       }
-      VEL.dir[VEL.i] = velocidade;
+      VEL.dir[i] = velocidade;
 
-      VEL.i = VEL.i + 1;
-      if(VEL.i > 2)
-        VEL.i = 0;
+      i = i + 1;
+      if(i > 4)
+        i = 0;
 
       xStatus = xQueueReceive(xVelocidade, &aux, 10 / portTICK_PERIOD_MS);
-      xStatus = xQueueSendToBack(xVelocidade, &VEL, 0);      
+      xStatus = xQueueSendToBack(xVelocidade, &VEL, 0);     
+
+            if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
+      {
+        xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+      }
+       
       vTaskDelay(50 / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
     }
   }
@@ -160,8 +176,8 @@
     vel VEL;
     int iEsq = 0;
     int iDir = 0;
-    int velEsq = med(VEL.esq);
-    int velDir = med(VEL.dir);
+    int velEsq;
+    int velDir;
     SetPoint sp;
     sp.esq = 50;
     sp.dir = 50;
@@ -170,23 +186,23 @@
   
     for (;;) // A Task shall never return or exit.
     {
+      //Leitura da Fila para verifiar os SetPoint Esquerdo e Direito
+      xStatus = xQueuePeek(xSP, &sp, 10 / portTICK_PERIOD_MS);          
+
+      //Leitura da Fila para saber o valor da ultima velocidade lida na roda Esquerda e Direita
+      xStatus = xQueuePeek(xVelocidade, &VEL, 10 / portTICK_PERIOD_MS);
   
-      if ( xSemaphoreTake( xSPSemaphore, ( TickType_t ) 5 ) == pdTRUE )
-      {
-          //Leitura da Fila para verifiar os SetPoint Esquerdo e Direito
-          xStatus = xQueuePeek(xSP, &sp, 10 / portTICK_PERIOD_MS);          
-          xSemaphoreGive( xSPSemaphore );
-      }
-      
-      
-      if ( xSemaphoreTake( xVELSemaphore, ( TickType_t ) 5 ) == pdTRUE )
-      {
-          //Leitura da Fila para saber o valor da ultima velocidade lida na roda Esquerda e Direita
-          xStatus = xQueuePeek(xVelocidade, &VEL, 10 / portTICK_PERIOD_MS);
-          xSemaphoreGive( xVELSemaphore );
-      }
-    
-  
+      velEsq = med(VEL.esq);
+      velDir = med(VEL.dir);
+
+      Serial.print("esq  ");
+      Serial.println(velEsq);
+      Serial.print("VEC_ESQ ");
+      Serial.print(VEL.esq[0]);Serial.print(" ");Serial.print(VEL.esq[1]);Serial.print(" ");Serial.print(VEL.esq[2]);Serial.print(" ");Serial.print(VEL.esq[3]);Serial.print(" ");Serial.println(VEL.esq[4]);
+      Serial.print("dir ");
+      Serial.println(velDir);
+      Serial.print("VEC_DIR ");
+      Serial.print(VEL.dir[0]);Serial.print(" ");Serial.print(VEL.dir[1]);Serial.print(" ");Serial.print(VEL.dir[2]);Serial.print(" ");Serial.print(VEL.dir[3]);Serial.print(" ");Serial.println(VEL.dir[4]);
       /************************************
        *** CALCULOS PARA A RODA ESQUERDA***
        ************************************/
@@ -203,7 +219,14 @@
       }
       //Modifica o pwm da roda Esquerda, baseado no PI.
       analogWrite (setVelEsq, pwm);
-  
+
+      if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
+      {
+        Serial.print("pwm Esq ");
+        Serial.println(pwm);
+        xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+      }
+
       /***********************************
        *** CALCULOS PARA A RODA DIREITA***
        ***********************************/
@@ -220,9 +243,13 @@
       }
       //Modifica o pwm da roda Direita, baseado no PI.
       analogWrite (setVelDir, pwm);
-  
-      //Grava os valores dos SetPoints e dos termos I do PI de volta na fila, para poder ler na proxima vez que chamar a função.
-      xStatus = xQueueSendToBack( xSP, &sp, 0);
+
+      if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
+      {
+        Serial.print("pwm Dir ");
+        Serial.println(pwm);
+        xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+      }
   
       //taskYIELD();
       //Tempo de espera para que esta função seja chamada novamante.
@@ -268,12 +295,9 @@
       }
   
       
-      if ( xSemaphoreTake( xVELSemaphore, ( TickType_t ) 5 ) == pdTRUE )
-      {
-          xStatus = xQueuePeek(xVelocidade, &VEL, 10 / portTICK_PERIOD_MS);
 
-          xSemaphoreGive( xVELSemaphore );
-      }
+      xStatus = xQueuePeek(xVelocidade, &VEL, 10 / portTICK_PERIOD_MS);
+
       velEsq = med(VEL.esq);
       velDir = med(VEL.dir);
 
@@ -314,22 +338,15 @@
   
     for (;;) // A Task shall never return or exit.
     {
-      if ( xSemaphoreTake( xVELSemaphore, ( TickType_t ) 5 ) == pdTRUE )
-      {
-          //Leitura da Fila para saber o valor da ultima velocidade lida na roda Esquerda e Direita
-          xStatus = xQueuePeek(xVelocidade, &VEL, 2 / portTICK_PERIOD_MS);
-          
-          xSemaphoreGive( xVELSemaphore );
-      }
+
+      //Leitura da Fila para saber o valor da ultima velocidade lida na roda Esquerda e Direita
+      xStatus = xQueuePeek(xVelocidade, &VEL, 2 / portTICK_PERIOD_MS);
 
 
-      if ( xSemaphoreTake( xPREFSemaphore, ( TickType_t ) 5 ) == pdTRUE )
-      {
-          //Pega da fila os valores de referencia passado pelo servidor
-          xStatus = xQueuePeek(xReferencePosition, &PREF, 10 / portTICK_PERIOD_MS);
+
+      //Pega da fila os valores de referencia passado pelo servidor
+      xStatus = xQueuePeek(xReferencePosition, &PREF, 10 / portTICK_PERIOD_MS);
           
-          xSemaphoreGive( xPREFSemaphore );
-      }
             
       velEsq = med(VEL.esq);
       velDir = med(VEL.dir);
@@ -410,13 +427,13 @@
     xTaskCreate(checkVel, "Velocímetro", 128, NULL, 1, NULL);
   
     //Task que Gerencia a comunicação com o XBEE
-    xTaskCreate(SerialComunication, "Comunication", 128, NULL, 1, NULL );
+    //xTaskCreate(SerialComunication, "Comunication", 128, NULL, 1, NULL );
   
     //Task que Calcula o modeo cinemático do robo, para saber a posição atual e o setPont das rodas
-    xTaskCreate(calcPosition, "Position", 128, NULL, 1, NULL );
+    //xTaskCreate(calcPosition, "Position", 128, NULL, 1, NULL );
   
     //Task que Calcula o PID das rodas, dado um SetPoinr.
-    xTaskCreate(calcPID, "PID", 128, NULL, 1, NULL);
+    xTaskCreate(calcPID, "PID", 128, NULL, 2, NULL);
   
     /* Start the scheduler so the created tasks start executing. */
     vTaskStartScheduler();
