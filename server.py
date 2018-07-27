@@ -122,7 +122,7 @@ class TempMonitor():
         self.number = ""
 
     def log_temperature(self, temp):
-        self.temps.append(float(temp))
+        self.temps.append(float(temp.decode("utf-8")[:5]))
 
     def check_and_notify(self, serial, temp):
         if float(temp) > MAX_TEMP:
