@@ -18,8 +18,8 @@
 #define setSentidoDir 7 //M0 Direction Control
 #define dist 11 //Perimetro da roda
 
-#define Kp 3
-#define Ki 1
+#define Kp 1
+#define Ki 2
 
 unsigned long ulIdleCycleCount = 0UL;
 
@@ -120,12 +120,15 @@ void checkVel( void *pvParameters) {
         iE = 0;
       flagVelE = false;
     }
-    //          Serial.print("VEC_ESQ ");
-    //          Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" "); Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
-    //    Serial.print(" VEL.esq[");
-    //    Serial.print(iE);
-    //    Serial.print("]= ");
-    //    Serial.print(VEL.esq[iE]);
+    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+//          Serial.print("VEC_ESQ ");
+//          Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" "); Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
+//    Serial.print(" VEL.esq[");
+//    Serial.print(iE);
+//    Serial.print("]= ");
+//    Serial.print(VEL.esq[iE]);
+      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+    }
 
     /*********************************************
      *** CALCULO DA VELOCIDADE DA RODA DIREITA ***
@@ -157,12 +160,15 @@ void checkVel( void *pvParameters) {
         iD = 0;
       flagVelD = false;
     }
-    //        Serial.print(" || VEC_DIR ");
-    //        Serial.print(VEL.dir[0]); Serial.print(" "); Serial.print(VEL.dir[1]); Serial.print(" "); Serial.print(VEL.dir[2]); Serial.print(" "); Serial.print(VEL.dir[3]); Serial.print(" "); Serial.println(VEL.dir[4]);
-    //   Serial.print(" || VEL.dir[");
-    //    Serial.print(iD);
-    //    Serial.print("]= ");
-    //    Serial.println(VEL.dir[iD]);
+    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+//        Serial.print(" || VEC_DIR ");
+//        Serial.print(VEL.dir[0]); Serial.print(" "); Serial.print(VEL.dir[1]); Serial.print(" "); Serial.print(VEL.dir[2]); Serial.print(" "); Serial.print(VEL.dir[3]); Serial.print(" "); Serial.println(VEL.dir[4]);
+//   Serial.print(" || VEL.dir[");
+//    Serial.print(iD);
+//    Serial.print("]= ");
+//    Serial.println(VEL.dir[iD]);
+      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+    }
 
 
 
@@ -205,7 +211,7 @@ void checkVel( void *pvParameters) {
       xSemaphoreGive( xVELSemaphore ); // Now free or "Give" the Serial Port for others.
     }
 
-    vTaskDelay(30 / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
+    vTaskDelay(20 / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
   }
 }
 
@@ -237,9 +243,14 @@ void calcPID( void *pvParameters) {
       xSemaphoreGive( xVELSemaphore );
     }
 
-    velEsq = med(VEL.esq);
-    velDir = med(VEL.dir);
-
+    for (int e = 0 ; e < 5 ; e++)
+      velEsq = velEsq + VEL.esq[e];
+    velEsq = velEsq/5;
+    
+    for (int e = 0 ; e < 5 ; e++)
+      velDir = velDir + VEL.dir[e];
+    velDir = velDir/5;
+    
     //    Serial.print(" ESQ ");
     //    Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" "); Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
     //    Serial.print(" DIR ");
@@ -261,13 +272,13 @@ void calcPID( void *pvParameters) {
     //Modifica o pwm da roda Esquerda, baseado no PI.
     analogWrite (setVelEsq, pwm);
 
-    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
-      Serial.print("pwmEsq ");
-      Serial.print(pwm);
-      Serial.print("\tvelEsq  ");
-      Serial.print(velEsq);
-      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
-    }
+//    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+//      Serial.print("pwmEsq ");
+//      Serial.print(pwm);
+//      Serial.print("\tvelEsq  ");
+//      Serial.print(velEsq);
+//      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+//    }
 
     /***********************************
      *** CALCULOS PARA A RODA DIREITA***
@@ -287,13 +298,13 @@ void calcPID( void *pvParameters) {
     //Modifica o pwm da roda Direita, baseado no PI.
     analogWrite (setVelDir, pwm);
 
-    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
-      Serial.print("\tpwmDir ");
-      Serial.print(pwm);
-      Serial.print("\tvelDir ");
-      Serial.println(velDir);
-      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
-    }
+//    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+//      Serial.print("\tpwmDir ");
+//      Serial.print(pwm);
+//      Serial.print("\tvelDir ");
+//      Serial.println(velDir);
+//      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+//    }
 
     //taskYIELD();
     //Tempo de espera para que esta função seja chamada novamante.
@@ -500,16 +511,16 @@ void setup() {
   *** FILAS **
   ************/
   //Fila que guarda a velocidade da roda esquerda
-  xVelocidade = xQueueCreate( 1, 1 * sizeof(Vel) );
+  xVelocidade = xQueueCreate(5, sizeof(Vel) );
 
   //Fila usada para armazenar os valores do SetPoint
-  xSP = xQueueCreate(2, sizeof(SetPoint) );
+  xSP = xQueueCreate(1, sizeof(SetPoint) );
 
   //Fila usada para armazenar as posições para as quais o robo deve se mover;
-  xReferencePosition = xQueueCreate(3, sizeof(Position) );
+  xReferencePosition = xQueueCreate(1, sizeof(Position) );
 
   //Fila usada para armazenar as posições para as quais o robo deve se mover;
-  xActualPosition = xQueueCreate(3, sizeof(Position) );
+  xActualPosition = xQueueCreate(1, sizeof(Position) );
 
 
   /************
@@ -519,7 +530,7 @@ void setup() {
   xTaskCreate(checkVel, "Velocímetro", 128, NULL, 1, NULL);
 
   //Task que Gerencia a comunicação com o XBEE
-  //xTaskCreate(SerialComunication, "Comunication", 128, NULL, 1, NULL );
+  xTaskCreate(SerialComunication, "Comunication", 128, NULL, 3, NULL );
 
   //Task que Calcula o modeo cinemático do robo, para saber a posição atual e o setPont das rodas
   //xTaskCreate(calcPosition, "Position", 128, NULL, 1, NULL );
