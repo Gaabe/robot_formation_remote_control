@@ -6,7 +6,7 @@ if __name__ == '__main__':
 	# port = int(input("Enter the port number that you would like to connect: "))
 	sensor = input("Enter the sensor id to send: ")
 	print("Connecting to the localhost at port 5000")
-	server_address = ('localhost', 5000)
+	server_address = ('192.168.0.108', 5000)
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	sock.connect(server_address)
 	print("Connected to the server")
