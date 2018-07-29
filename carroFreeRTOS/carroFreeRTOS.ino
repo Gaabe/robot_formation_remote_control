@@ -18,8 +18,8 @@
 #define setSentidoDir 7 //M0 Direction Control
 #define dist 11 //Perimetro da roda
 
-#define Kp 3
-#define Ki 1
+#define Kp 4
+#define Ki 2  
 
 unsigned long ulIdleCycleCount = 0UL;
 
@@ -32,8 +32,8 @@ typedef struct {
 
 //Struct utilizada para guardar OS  Set Points
 typedef struct {
-  int esq = 50;
-  int dir = 50;
+  int esq = 50; 
+  int dir = 30;
 } SetPoint;
 
 //Struct utilizada para guardar Posições de Referência
@@ -64,12 +64,12 @@ QueueHandle_t xSP; //Fila usada para armazenar os valores do SetPoint
 QueueHandle_t xReferencePosition; //Fila usada para armazenar as posições para as quais o robo deve se mover.
 QueueHandle_t xActualPosition; //Fila usada para armazenar as posições para as quais o robo deve se mover.
 
-int med(int vel[5]) {
+int med(int vel[3]) {
   int result;
   for (int e = 0 ; e < 5 ; e++)
     result = result + vel[e];
 
-  return result / 5;
+  return result / 3;
 }
 
 
@@ -77,8 +77,9 @@ int med(int vel[5]) {
    Função que faz a leitura da velocidade de uma das rodas através do encoder.
  ******************************************************************************/
 void checkVel( void *pvParameters) {
-  analogWrite(setVelDir, 255);
-  analogWrite(setVelEsq, 255);
+  analogWrite(setVelDir, 90);
+  analogWrite(setVelEsq, 90);
+  
   Vel VEL, aux;
   int iE = 0, iD = 0;
   portBASE_TYPE xStatus;
@@ -116,16 +117,16 @@ void checkVel( void *pvParameters) {
     if (flagVelE) {
       VEL.esq[iE] = velocidadeE;
       iE = iE + 1;
-      if (iE >= 5)
+      if (iE > 2)
         iE = 0;
       flagVelE = false;
     }
-    //          Serial.print("VEC_ESQ ");
+   if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+     //          Serial.print("VEC_ESQ ");
     //          Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" "); Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
-    //    Serial.print(" VEL.esq[");
-    //    Serial.print(iE);
-    //    Serial.print("]= ");
-    //    Serial.print(VEL.esq[iE]);
+       // Serial.print(" VEL.esq[");Serial.print(iE);Serial.print("]= ");Serial.print(VEL.esq[iE]);
+     xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+    }
 
     /*********************************************
      *** CALCULO DA VELOCIDADE DA RODA DIREITA ***
@@ -139,7 +140,7 @@ void checkVel( void *pvParameters) {
 
     if (rawSensorValueD < 650 && highFlagD && millis() - T2D > 30) { //Min value is 400 an
       T1D = millis();
-      velocidadeD = 10 * (dist / 8) / ((T1D - lastT1D) / 1000);
+      velocidadeD  = 10 * (dist / 8) / ((T1D - lastT1D) / 1000);
       lastT1D = T1D;
       highFlagD = false;
       lowFlagD = true;
@@ -153,17 +154,17 @@ void checkVel( void *pvParameters) {
     if (flagVelD) {
       VEL.dir[iD] = velocidadeD;
       iD = iD + 1;
-      if (iD >= 5)
+      if (iD > 2)
         iD = 0;
       flagVelD = false;
     }
-    //        Serial.print(" || VEC_DIR ");
+   if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+     //        Serial.print(" || VEC_DIR ");
     //        Serial.print(VEL.dir[0]); Serial.print(" "); Serial.print(VEL.dir[1]); Serial.print(" "); Serial.print(VEL.dir[2]); Serial.print(" "); Serial.print(VEL.dir[3]); Serial.print(" "); Serial.println(VEL.dir[4]);
-    //   Serial.print(" || VEL.dir[");
-    //    Serial.print(iD);
-    //    Serial.print("]= ");
-    //    Serial.println(VEL.dir[iD]);
-
+  //     Serial.print(" || VEL.dir["); Serial.print(iD); Serial.print("]= "); Serial.println(VEL.dir[iD]);
+     xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+    }
+ 
 
 
     //       if ((millis() - lastT1D) > 1000) {
@@ -205,7 +206,7 @@ void checkVel( void *pvParameters) {
       xSemaphoreGive( xVELSemaphore ); // Now free or "Give" the Serial Port for others.
     }
 
-    vTaskDelay(30 / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
+    vTaskDelay(20 / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
   }
 }
 
@@ -217,8 +218,8 @@ void calcPID( void *pvParameters) {
   Vel VEL;
   int iEsq = 0;
   int iDir = 0;
-  int velEsq;
-  int velDir;
+  int velEsq = 0;
+  int velDir = 0;
   SetPoint sp;
   int E = 0, P = 0, pwm = 0;
   portBASE_TYPE xStatus;
@@ -237,13 +238,24 @@ void calcPID( void *pvParameters) {
       xSemaphoreGive( xVELSemaphore );
     }
 
-    velEsq = med(VEL.esq);
-    velDir = med(VEL.dir);
-
-    //    Serial.print(" ESQ ");
-    //    Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" "); Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
-    //    Serial.print(" DIR ");
-    //    Serial.print(VEL.dir[0]); Serial.print(" "); Serial.print(VEL.dir[1]); Serial.print(" "); Serial.print(VEL.dir[2]); Serial.print(" "); Serial.print(VEL.dir[3]); Serial.print(" "); Serial.println(VEL.dir[4]);
+//    velEsq = med(VEL.esq);
+//    velDir = med(VEL.dir);
+    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+        Serial.print(" ESQ ");
+        Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" ");// Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
+        Serial.print(" DIR ");
+        Serial.print(VEL.dir[0]); Serial.print(" "); Serial.print(VEL.dir[1]); Serial.print(" "); Serial.print(VEL.dir[2]); Serial.println(" ");// Serial.print(VEL.dir[3]); Serial.print(" "); Serial.println(VEL.dir[4]);
+      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+    }
+    velDir = 0;
+    velEsq = 0;
+    for (int e = 0 ; e < 3 ; e++){
+      velDir = velDir + VEL.dir[e];
+      velEsq = velEsq + VEL.esq[e];
+    }   
+    velDir = velDir/3;
+    velEsq = velEsq/3;
+   
     /************************************
      *** CALCULOS PARA A RODA ESQUERDA***
      ************************************/
@@ -251,6 +263,7 @@ void calcPID( void *pvParameters) {
     P = Kp * E;           //Calculo do termo P do PI da roda Esquerda
     iEsq = iEsq + (0.5 * E) * Ki; //Incremento do termo I
     pwm = P + iEsq;       //Calculo do PWM resultante
+
     //Condições de contorno para saturação do PWM
     if (pwm > 255) {
       pwm = 255;
@@ -262,7 +275,7 @@ void calcPID( void *pvParameters) {
     analogWrite (setVelEsq, pwm);
 
     if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
-      Serial.print("pwmEsq ");
+      Serial.print(" || pwmEsq ");
       Serial.print(pwm);
       Serial.print("\tvelEsq  ");
       Serial.print(velEsq);
@@ -297,7 +310,7 @@ void calcPID( void *pvParameters) {
 
     //taskYIELD();
     //Tempo de espera para que esta função seja chamada novamante.
-    vTaskDelay(250 / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
+    vTaskDelay(500 / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
   }
 }
 
@@ -360,7 +373,7 @@ void SerialComunication( void *pvParameters) {
       Serial.println(velDir);
       xSemaphoreGive( xSerialSemaphore );
     }
-    vTaskDelay(500 / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
+    vTaskDelay(1000 / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
   }
 }
 
@@ -374,6 +387,7 @@ void calcPosition( void *pvParameters) {
   Vel VEL;
   SetPoint sp, auxSP;
   int velEsq, velDir;
+  int tPos = 500;
   float setPointEsq = 0, setPointDir = 0;
   float velCentroMassa = 0;
   float wAngular = 0;
@@ -403,9 +417,9 @@ void calcPosition( void *pvParameters) {
     wAngular = (velDir - velEsq) / DISTANCIA_ENTRE_EIXOS; //Calculo da velocidade angular do carrinho.
 
     //Calcula a nova posição X e Y e o angulo theta
-    AP.X = AP.X + 0.5 * velCentroMassa * cos(AP.THETA);
-    AP.Y = AP.Y + 0.5 * velCentroMassa * sin(AP.THETA);
-    AP.THETA = AP.THETA + 0.5 * wAngular;
+    AP.X = AP.X + tPos * velCentroMassa * cos(AP.THETA);
+    AP.Y = AP.Y + tPos * velCentroMassa * sin(AP.THETA);
+    AP.THETA = AP.THETA + tPos * wAngular;
 
     //Realiza o calculo dos erros de posicionamento em relação às referências.
     erro1 = cos(AP.THETA) * (PREF.X - AP.X) + sin(AP.THETA) * (PREF.Y - AP.Y);
@@ -434,7 +448,7 @@ void calcPosition( void *pvParameters) {
     //      xSemaphoreGive( xAPSemaphore );
     //    }
   }
-  vTaskDelay(1000 / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
+  vTaskDelay(tPos / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
 }
 
 
