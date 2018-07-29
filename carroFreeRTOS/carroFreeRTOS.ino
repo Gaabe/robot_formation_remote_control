@@ -240,19 +240,19 @@ void calcPID( void *pvParameters) {
 
 //    velEsq = med(VEL.esq);
 //    velDir = med(VEL.dir);
-    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
-        Serial.print(" ESQ ");
-        Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" ");// Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
-        Serial.print(" DIR ");
-        Serial.print(VEL.dir[0]); Serial.print(" "); Serial.print(VEL.dir[1]); Serial.print(" "); Serial.print(VEL.dir[2]); Serial.println(" ");// Serial.print(VEL.dir[3]); Serial.print(" "); Serial.println(VEL.dir[4]);
-      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
-    }
+//    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+//        Serial.print(" ESQ ");
+//        Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" ");// Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
+//        Serial.print(" DIR ");
+//        Serial.print(VEL.dir[0]); Serial.print(" "); Serial.print(VEL.dir[1]); Serial.print(" "); Serial.print(VEL.dir[2]); Serial.println(" ");// Serial.print(VEL.dir[3]); Serial.print(" "); Serial.println(VEL.dir[4]);
+//      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+//    }
     velDir = 0;
     velEsq = 0;
     for (int e = 0 ; e < 3 ; e++){
       velDir = velDir + VEL.dir[e];
       velEsq = velEsq + VEL.esq[e];
-    }   
+    }
     velDir = velDir/3;
     velEsq = velEsq/3;
    
@@ -275,10 +275,10 @@ void calcPID( void *pvParameters) {
     analogWrite (setVelEsq, pwm);
 
     if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
-      Serial.print(" || pwmEsq ");
-      Serial.print(pwm);
-      Serial.print("\tvelEsq  ");
-      Serial.print(velEsq);
+      //Serial.print(" || pwmEsq ");
+      //Serial.print(pwm);
+      //Serial.print("\tvelEsq  ");
+      //Serial.print(velEsq);
       xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
     }
 
@@ -301,10 +301,10 @@ void calcPID( void *pvParameters) {
     analogWrite (setVelDir, pwm);
 
     if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
-      Serial.print("\tpwmDir ");
-      Serial.print(pwm);
-      Serial.print("\tvelDir ");
-      Serial.println(velDir);
+      //Serial.print("\tpwmDir ");
+      //Serial.print(pwm);
+      //Serial.print("\tvelDir ");
+      //Serial.println(velDir);
       xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
     }
 
@@ -322,7 +322,7 @@ void SerialComunication( void *pvParameters) {
   portBASE_TYPE xStatus;
   Position PREF, auxPREF, AP;
   Vel VEL;
-  int velEsq, velDir;
+  int velEsq = 0, velDir = 0;
 
   for (;;) // A Task shall never return or exit.
   {
@@ -356,20 +356,26 @@ void SerialComunication( void *pvParameters) {
       xSemaphoreGive( xVELSemaphore );
     }
 
-    velEsq = med(VEL.esq);
-    velDir = med(VEL.dir);
+    velDir = 0;
+    velEsq = 0;
+    for (int e = 0 ; e < 3 ; e++){
+      velDir = velDir + VEL.dir[e];
+      velEsq = velEsq + VEL.esq[e];
+    }
+    velDir = velDir/3;
+    velEsq = velEsq/3;
 
     if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
     {
-      Serial.print("X");
+      Serial.print("X: ");
       Serial.print(AP.X);
-      Serial.print("\tY");
+      Serial.print("\tY: ");
       Serial.print(AP.Y);
-      Serial.print("\tT");
+      Serial.print("\tT: ");
       Serial.print(AP.THETA);
-      Serial.print("\tvelEsq");
+      Serial.print("\tvelEsq: ");
       Serial.print(velEsq);
-      Serial.print("\tvelDir");
+      Serial.print("\tvelDir: ");
       Serial.println(velDir);
       xSemaphoreGive( xSerialSemaphore );
     }
@@ -533,7 +539,7 @@ void setup() {
   xTaskCreate(checkVel, "Velocímetro", 128, NULL, 1, NULL);
 
   //Task que Gerencia a comunicação com o XBEE
-  //xTaskCreate(SerialComunication, "Comunication", 128, NULL, 1, NULL );
+  xTaskCreate(SerialComunication, "Comunication", 128, NULL, 1, NULL );
 
   //Task que Calcula o modeo cinemático do robo, para saber a posição atual e o setPont das rodas
   //xTaskCreate(calcPosition, "Position", 128, NULL, 1, NULL );
