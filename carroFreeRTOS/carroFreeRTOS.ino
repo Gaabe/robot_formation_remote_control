@@ -18,7 +18,11 @@
 #define setSentidoDir 7 //M0 Direction Control
 #define dist 11 //Perimetro da roda
 
+<<<<<<< HEAD
 #define Kp 1
+=======
+#define Kp 4
+>>>>>>> branch-temporario
 #define Ki 2
 
 unsigned long ulIdleCycleCount = 0UL;
@@ -33,7 +37,7 @@ typedef struct {
 //Struct utilizada para guardar OS  Set Points
 typedef struct {
   int esq = 50;
-  int dir = 50;
+  int dir = 30;
 } SetPoint;
 
 //Struct utilizada para guardar Posições de Referência
@@ -64,12 +68,12 @@ QueueHandle_t xSP; //Fila usada para armazenar os valores do SetPoint
 QueueHandle_t xReferencePosition; //Fila usada para armazenar as posições para as quais o robo deve se mover.
 QueueHandle_t xActualPosition; //Fila usada para armazenar as posições para as quais o robo deve se mover.
 
-int med(int vel[5]) {
+int med(int vel[3]) {
   int result;
   for (int e = 0 ; e < 5 ; e++)
     result = result + vel[e];
 
-  return result / 5;
+  return result / 3;
 }
 
 
@@ -77,8 +81,9 @@ int med(int vel[5]) {
    Função que faz a leitura da velocidade de uma das rodas através do encoder.
  ******************************************************************************/
 void checkVel( void *pvParameters) {
-  analogWrite(setVelDir, 255);
-  analogWrite(setVelEsq, 255);
+  analogWrite(setVelDir, 90);
+  analogWrite(setVelEsq, 90);
+
   Vel VEL, aux;
   int iE = 0, iD = 0;
   portBASE_TYPE xStatus;
@@ -116,17 +121,23 @@ void checkVel( void *pvParameters) {
     if (flagVelE) {
       VEL.esq[iE] = velocidadeE;
       iE = iE + 1;
-      if (iE >= 5)
+      if (iE > 2)
         iE = 0;
       flagVelE = false;
     }
     if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+<<<<<<< HEAD
 //          Serial.print("VEC_ESQ ");
 //          Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" "); Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
 //    Serial.print(" VEL.esq[");
 //    Serial.print(iE);
 //    Serial.print("]= ");
 //    Serial.print(VEL.esq[iE]);
+=======
+      //          Serial.print("VEC_ESQ ");
+      //          Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" "); Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
+      // Serial.print(" VEL.esq[");Serial.print(iE);Serial.print("]= ");Serial.print(VEL.esq[iE]);
+>>>>>>> branch-temporario
       xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
     }
 
@@ -142,7 +153,7 @@ void checkVel( void *pvParameters) {
 
     if (rawSensorValueD < 650 && highFlagD && millis() - T2D > 30) { //Min value is 400 an
       T1D = millis();
-      velocidadeD = 10 * (dist / 8) / ((T1D - lastT1D) / 1000);
+      velocidadeD  = 10 * (dist / 8) / ((T1D - lastT1D) / 1000);
       lastT1D = T1D;
       highFlagD = false;
       lowFlagD = true;
@@ -156,17 +167,23 @@ void checkVel( void *pvParameters) {
     if (flagVelD) {
       VEL.dir[iD] = velocidadeD;
       iD = iD + 1;
-      if (iD >= 5)
+      if (iD > 2)
         iD = 0;
       flagVelD = false;
     }
     if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+<<<<<<< HEAD
 //        Serial.print(" || VEC_DIR ");
 //        Serial.print(VEL.dir[0]); Serial.print(" "); Serial.print(VEL.dir[1]); Serial.print(" "); Serial.print(VEL.dir[2]); Serial.print(" "); Serial.print(VEL.dir[3]); Serial.print(" "); Serial.println(VEL.dir[4]);
 //   Serial.print(" || VEL.dir[");
 //    Serial.print(iD);
 //    Serial.print("]= ");
 //    Serial.println(VEL.dir[iD]);
+=======
+      //        Serial.print(" || VEC_DIR ");
+      //        Serial.print(VEL.dir[0]); Serial.print(" "); Serial.print(VEL.dir[1]); Serial.print(" "); Serial.print(VEL.dir[2]); Serial.print(" "); Serial.print(VEL.dir[3]); Serial.print(" "); Serial.println(VEL.dir[4]);
+      //     Serial.print(" || VEL.dir["); Serial.print(iD); Serial.print("]= "); Serial.println(VEL.dir[iD]);
+>>>>>>> branch-temporario
       xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
     }
 
@@ -223,8 +240,8 @@ void calcPID( void *pvParameters) {
   Vel VEL;
   int iEsq = 0;
   int iDir = 0;
-  int velEsq;
-  int velDir;
+  int velEsq = 0;
+  int velDir = 0;
   SetPoint sp;
   int E = 0, P = 0, pwm = 0;
   portBASE_TYPE xStatus;
@@ -243,6 +260,7 @@ void calcPID( void *pvParameters) {
       xSemaphoreGive( xVELSemaphore );
     }
 
+<<<<<<< HEAD
     for (int e = 0 ; e < 5 ; e++)
       velEsq = velEsq + VEL.esq[e];
     velEsq = velEsq/5;
@@ -255,6 +273,26 @@ void calcPID( void *pvParameters) {
     //    Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" "); Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
     //    Serial.print(" DIR ");
     //    Serial.print(VEL.dir[0]); Serial.print(" "); Serial.print(VEL.dir[1]); Serial.print(" "); Serial.print(VEL.dir[2]); Serial.print(" "); Serial.print(VEL.dir[3]); Serial.print(" "); Serial.println(VEL.dir[4]);
+=======
+    //    velEsq = med(VEL.esq);
+    //    velDir = med(VEL.dir);
+    //    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+    //        Serial.print(" ESQ ");
+    //        Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" ");// Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
+    //        Serial.print(" DIR ");
+    //        Serial.print(VEL.dir[0]); Serial.print(" "); Serial.print(VEL.dir[1]); Serial.print(" "); Serial.print(VEL.dir[2]); Serial.println(" ");// Serial.print(VEL.dir[3]); Serial.print(" "); Serial.println(VEL.dir[4]);
+    //      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+    //    }
+    velDir = 0;
+    velEsq = 0;
+    for (int e = 0 ; e < 3 ; e++) {
+      velDir = velDir + VEL.dir[e];
+      velEsq = velEsq + VEL.esq[e];
+    }
+    velDir = velDir / 3;
+    velEsq = velEsq / 3;
+
+>>>>>>> branch-temporario
     /************************************
      *** CALCULOS PARA A RODA ESQUERDA***
      ************************************/
@@ -262,6 +300,7 @@ void calcPID( void *pvParameters) {
     P = Kp * E;           //Calculo do termo P do PI da roda Esquerda
     iEsq = iEsq + (0.5 * E) * Ki; //Incremento do termo I
     pwm = P + iEsq;       //Calculo do PWM resultante
+
     //Condições de contorno para saturação do PWM
     if (pwm > 255) {
       pwm = 255;
@@ -272,6 +311,7 @@ void calcPID( void *pvParameters) {
     //Modifica o pwm da roda Esquerda, baseado no PI.
     analogWrite (setVelEsq, pwm);
 
+<<<<<<< HEAD
 //    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
 //      Serial.print("pwmEsq ");
 //      Serial.print(pwm);
@@ -279,6 +319,15 @@ void calcPID( void *pvParameters) {
 //      Serial.print(velEsq);
 //      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
 //    }
+=======
+    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+      //Serial.print(" || pwmEsq ");
+      //Serial.print(pwm);
+      //Serial.print("\tvelEsq  ");
+      //Serial.print(velEsq);
+      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+    }
+>>>>>>> branch-temporario
 
     /***********************************
      *** CALCULOS PARA A RODA DIREITA***
@@ -298,6 +347,7 @@ void calcPID( void *pvParameters) {
     //Modifica o pwm da roda Direita, baseado no PI.
     analogWrite (setVelDir, pwm);
 
+<<<<<<< HEAD
 //    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
 //      Serial.print("\tpwmDir ");
 //      Serial.print(pwm);
@@ -305,10 +355,19 @@ void calcPID( void *pvParameters) {
 //      Serial.println(velDir);
 //      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
 //    }
+=======
+    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+      //Serial.print("\tpwmDir ");
+      //Serial.print(pwm);
+      //Serial.print("\tvelDir ");
+      //Serial.println(velDir);
+      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+    }
+>>>>>>> branch-temporario
 
     //taskYIELD();
     //Tempo de espera para que esta função seja chamada novamante.
-    vTaskDelay(250 / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
+    vTaskDelay(500 / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
   }
 }
 
@@ -320,26 +379,55 @@ void SerialComunication( void *pvParameters) {
   portBASE_TYPE xStatus;
   Position PREF, auxPREF, AP;
   Vel VEL;
-  int velEsq, velDir;
+  int velEsq = 0, velDir = 0;
+  int i = 0;
+
+  char coordenadas[5];
+  char variavel = 'x';
 
   for (;;) // A Task shall never return or exit.
   {
     //Leitura dos valores da serial enviados pelo servidor.
     if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
     {
-      if (Serial.available() > 0) {
-        PREF.X = Serial.parseInt();      //Posição em X
-        PREF.Y = Serial.parseInt();      //Posição em Y
-        PREF.THETA = Serial.parseInt();  //Posição angular em Theta
-      }
-      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
-    }
+      while (Serial.available() > 0) {
+        char charSerial = Serial.read();
+        if (charSerial != '$') {
+          coordenadas[i] = charSerial;
+          i++;
+        }
+        else if (variavel == 'x') {
+          coordenadas[i] = '\0';
+          PREF.X = atoi(coordenadas);
+          i = 0;
+          variavel = 'y';
+        }
+        else if (variavel == 'y') {
+          coordenadas[i] = '\0';
+          PREF.Y = atoi(coordenadas);
+          i = 0;
+          variavel = 't';
+        }
+        else if (variavel == 't') {
+          coordenadas[i] = '\0';
+          PREF.THETA = atoi(coordenadas);
+          i = 0;
+          variavel = 'x';
+        }
 
-    if ( xSemaphoreTake( xPREFSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
-      xStatus = xQueueReceive(xReferencePosition, &auxPREF, 10 / portTICK_PERIOD_MS);
-      xStatus = xQueueSendToBack(xReferencePosition, &PREF, 0);
-      xSemaphoreGive( xPREFSemaphore );
+      }
+
+      //     PREF.Y = Serial.parseInt();      //Posição em Y
+      //     PREF.THETA = Serial.parseInt();  //Posição angular em Theta
+
     }
+    xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+
+    //if ( xSemaphoreTake( xPREFSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+    //  xStatus = xQueueReceive(xReferencePosition, &auxPREF, 10 / portTICK_PERIOD_MS);
+    //  xStatus = xQueueSendToBack(xReferencePosition, &PREF, 0);
+    //  xSemaphoreGive( xPREFSemaphore );
+    //}
 
     /*********************************************************************
      *** Envia via serial a posição atual do robo para o XBEE***
@@ -354,24 +442,30 @@ void SerialComunication( void *pvParameters) {
       xSemaphoreGive( xVELSemaphore );
     }
 
-    velEsq = med(VEL.esq);
-    velDir = med(VEL.dir);
+    velDir = 0;
+    velEsq = 0;
+    for (int e = 0 ; e < 3 ; e++) {
+      velDir = velDir + VEL.dir[e];
+      velEsq = velEsq + VEL.esq[e];
+    }
+    velDir = velDir / 3;
+    velEsq = velEsq / 3;
 
     if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
     {
-      Serial.print("X");
-      Serial.print(AP.X);
-      Serial.print("\tY");
-      Serial.print(AP.Y);
-      Serial.print("\tT");
-      Serial.print(AP.THETA);
-      Serial.print("\tvelEsq");
+      Serial.print("X: ");
+      Serial.print(PREF.X);
+      Serial.print("\tY: ");
+      Serial.print(PREF.Y);
+      Serial.print("\tT: ");
+      Serial.print(PREF.THETA);
+      Serial.print("\tvelEsq: ");
       Serial.print(velEsq);
-      Serial.print("\tvelDir");
+      Serial.print("\tvelDir: ");
       Serial.println(velDir);
       xSemaphoreGive( xSerialSemaphore );
     }
-    vTaskDelay(500 / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
+    vTaskDelay(1000 / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
   }
 }
 
@@ -385,6 +479,7 @@ void calcPosition( void *pvParameters) {
   Vel VEL;
   SetPoint sp, auxSP;
   int velEsq, velDir;
+  int tPos = 500;
   float setPointEsq = 0, setPointDir = 0;
   float velCentroMassa = 0;
   float wAngular = 0;
@@ -414,9 +509,9 @@ void calcPosition( void *pvParameters) {
     wAngular = (velDir - velEsq) / DISTANCIA_ENTRE_EIXOS; //Calculo da velocidade angular do carrinho.
 
     //Calcula a nova posição X e Y e o angulo theta
-    AP.X = AP.X + 0.5 * velCentroMassa * cos(AP.THETA);
-    AP.Y = AP.Y + 0.5 * velCentroMassa * sin(AP.THETA);
-    AP.THETA = AP.THETA + 0.5 * wAngular;
+    AP.X = AP.X + tPos * velCentroMassa * cos(AP.THETA);
+    AP.Y = AP.Y + tPos * velCentroMassa * sin(AP.THETA);
+    AP.THETA = AP.THETA + tPos * wAngular;
 
     //Realiza o calculo dos erros de posicionamento em relação às referências.
     erro1 = cos(AP.THETA) * (PREF.X - AP.X) + sin(AP.THETA) * (PREF.Y - AP.Y);
@@ -445,7 +540,7 @@ void calcPosition( void *pvParameters) {
     //      xSemaphoreGive( xAPSemaphore );
     //    }
   }
-  vTaskDelay(1000 / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
+  vTaskDelay(tPos / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
 }
 
 
@@ -530,7 +625,11 @@ void setup() {
   xTaskCreate(checkVel, "Velocímetro", 128, NULL, 1, NULL);
 
   //Task que Gerencia a comunicação com o XBEE
+<<<<<<< HEAD
   xTaskCreate(SerialComunication, "Comunication", 128, NULL, 3, NULL );
+=======
+  xTaskCreate(SerialComunication, "Comunication", 128, NULL, 1, NULL );
+>>>>>>> branch-temporario
 
   //Task que Calcula o modeo cinemático do robo, para saber a posição atual e o setPont das rodas
   //xTaskCreate(calcPosition, "Position", 128, NULL, 1, NULL );
