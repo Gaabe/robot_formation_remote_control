@@ -19,7 +19,7 @@
 #define dist 11 //Perimetro da roda
 
 #define Kp 4
-#define Ki 2  
+#define Ki 2
 
 unsigned long ulIdleCycleCount = 0UL;
 
@@ -32,7 +32,7 @@ typedef struct {
 
 //Struct utilizada para guardar OS  Set Points
 typedef struct {
-  int esq = 50; 
+  int esq = 50;
   int dir = 30;
 } SetPoint;
 
@@ -79,7 +79,7 @@ int med(int vel[3]) {
 void checkVel( void *pvParameters) {
   analogWrite(setVelDir, 90);
   analogWrite(setVelEsq, 90);
-  
+
   Vel VEL, aux;
   int iE = 0, iD = 0;
   portBASE_TYPE xStatus;
@@ -121,11 +121,11 @@ void checkVel( void *pvParameters) {
         iE = 0;
       flagVelE = false;
     }
-   if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
-     //          Serial.print("VEC_ESQ ");
-    //          Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" "); Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
-       // Serial.print(" VEL.esq[");Serial.print(iE);Serial.print("]= ");Serial.print(VEL.esq[iE]);
-     xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+      //          Serial.print("VEC_ESQ ");
+      //          Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" "); Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
+      // Serial.print(" VEL.esq[");Serial.print(iE);Serial.print("]= ");Serial.print(VEL.esq[iE]);
+      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
     }
 
     /*********************************************
@@ -158,13 +158,13 @@ void checkVel( void *pvParameters) {
         iD = 0;
       flagVelD = false;
     }
-   if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
-     //        Serial.print(" || VEC_DIR ");
-    //        Serial.print(VEL.dir[0]); Serial.print(" "); Serial.print(VEL.dir[1]); Serial.print(" "); Serial.print(VEL.dir[2]); Serial.print(" "); Serial.print(VEL.dir[3]); Serial.print(" "); Serial.println(VEL.dir[4]);
-  //     Serial.print(" || VEL.dir["); Serial.print(iD); Serial.print("]= "); Serial.println(VEL.dir[iD]);
-     xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+      //        Serial.print(" || VEC_DIR ");
+      //        Serial.print(VEL.dir[0]); Serial.print(" "); Serial.print(VEL.dir[1]); Serial.print(" "); Serial.print(VEL.dir[2]); Serial.print(" "); Serial.print(VEL.dir[3]); Serial.print(" "); Serial.println(VEL.dir[4]);
+      //     Serial.print(" || VEL.dir["); Serial.print(iD); Serial.print("]= "); Serial.println(VEL.dir[iD]);
+      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
     }
- 
+
 
 
     //       if ((millis() - lastT1D) > 1000) {
@@ -238,24 +238,24 @@ void calcPID( void *pvParameters) {
       xSemaphoreGive( xVELSemaphore );
     }
 
-//    velEsq = med(VEL.esq);
-//    velDir = med(VEL.dir);
-//    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
-//        Serial.print(" ESQ ");
-//        Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" ");// Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
-//        Serial.print(" DIR ");
-//        Serial.print(VEL.dir[0]); Serial.print(" "); Serial.print(VEL.dir[1]); Serial.print(" "); Serial.print(VEL.dir[2]); Serial.println(" ");// Serial.print(VEL.dir[3]); Serial.print(" "); Serial.println(VEL.dir[4]);
-//      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
-//    }
+    //    velEsq = med(VEL.esq);
+    //    velDir = med(VEL.dir);
+    //    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+    //        Serial.print(" ESQ ");
+    //        Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" ");// Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
+    //        Serial.print(" DIR ");
+    //        Serial.print(VEL.dir[0]); Serial.print(" "); Serial.print(VEL.dir[1]); Serial.print(" "); Serial.print(VEL.dir[2]); Serial.println(" ");// Serial.print(VEL.dir[3]); Serial.print(" "); Serial.println(VEL.dir[4]);
+    //      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+    //    }
     velDir = 0;
     velEsq = 0;
-    for (int e = 0 ; e < 3 ; e++){
+    for (int e = 0 ; e < 3 ; e++) {
       velDir = velDir + VEL.dir[e];
       velEsq = velEsq + VEL.esq[e];
     }
-    velDir = velDir/3;
-    velEsq = velEsq/3;
-   
+    velDir = velDir / 3;
+    velEsq = velEsq / 3;
+
     /************************************
      *** CALCULOS PARA A RODA ESQUERDA***
      ************************************/
@@ -323,25 +323,54 @@ void SerialComunication( void *pvParameters) {
   Position PREF, auxPREF, AP;
   Vel VEL;
   int velEsq = 0, velDir = 0;
+  int i = 0;
+
+  char coordenadas[5];
+  char variavel = 'x';
 
   for (;;) // A Task shall never return or exit.
   {
     //Leitura dos valores da serial enviados pelo servidor.
     if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
     {
-      if (Serial.available() > 0) {
-        PREF.X = Serial.parseInt();      //Posição em X
-        PREF.Y = Serial.parseInt();      //Posição em Y
-        PREF.THETA = Serial.parseInt();  //Posição angular em Theta
-      }
-      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
-    }
+      while (Serial.available() > 0) {
+        char charSerial = Serial.read();
+        if (charSerial != '$') {
+          coordenadas[i] = charSerial;
+          i++;
+        }
+        else if (variavel == 'x') {
+          coordenadas[i] = '\0';
+          PREF.X = atoi(coordenadas);
+          i = 0;
+          variavel = 'y';
+        }
+        else if (variavel == 'y') {
+          coordenadas[i] = '\0';
+          PREF.Y = atoi(coordenadas);
+          i = 0;
+          variavel = 't';
+        }
+        else if (variavel == 't') {
+          coordenadas[i] = '\0';
+          PREF.THETA = atoi(coordenadas);
+          i = 0;
+          variavel = 'x';
+        }
 
-    if ( xSemaphoreTake( xPREFSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
-      xStatus = xQueueReceive(xReferencePosition, &auxPREF, 10 / portTICK_PERIOD_MS);
-      xStatus = xQueueSendToBack(xReferencePosition, &PREF, 0);
-      xSemaphoreGive( xPREFSemaphore );
+      }
+
+      //     PREF.Y = Serial.parseInt();      //Posição em Y
+      //     PREF.THETA = Serial.parseInt();  //Posição angular em Theta
+
     }
+    xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+
+    //if ( xSemaphoreTake( xPREFSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+    //  xStatus = xQueueReceive(xReferencePosition, &auxPREF, 10 / portTICK_PERIOD_MS);
+    //  xStatus = xQueueSendToBack(xReferencePosition, &PREF, 0);
+    //  xSemaphoreGive( xPREFSemaphore );
+    //}
 
     /*********************************************************************
      *** Envia via serial a posição atual do robo para o XBEE***
@@ -358,21 +387,21 @@ void SerialComunication( void *pvParameters) {
 
     velDir = 0;
     velEsq = 0;
-    for (int e = 0 ; e < 3 ; e++){
+    for (int e = 0 ; e < 3 ; e++) {
       velDir = velDir + VEL.dir[e];
       velEsq = velEsq + VEL.esq[e];
     }
-    velDir = velDir/3;
-    velEsq = velEsq/3;
+    velDir = velDir / 3;
+    velEsq = velEsq / 3;
 
     if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
     {
       Serial.print("X: ");
-      Serial.print(AP.X);
+      Serial.print(PREF.X);
       Serial.print("\tY: ");
-      Serial.print(AP.Y);
+      Serial.print(PREF.Y);
       Serial.print("\tT: ");
-      Serial.print(AP.THETA);
+      Serial.print(PREF.THETA);
       Serial.print("\tvelEsq: ");
       Serial.print(velEsq);
       Serial.print("\tvelDir: ");
