@@ -18,7 +18,11 @@
 #define setSentidoDir 7 //M0 Direction Control
 #define dist 11 //Perimetro da roda
 
+<<<<<<< HEAD
+#define Kp 1
+=======
 #define Kp 4
+>>>>>>> branch-temporario
 #define Ki 2
 
 unsigned long ulIdleCycleCount = 0UL;
@@ -122,9 +126,18 @@ void checkVel( void *pvParameters) {
       flagVelE = false;
     }
     if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+<<<<<<< HEAD
+//          Serial.print("VEC_ESQ ");
+//          Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" "); Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
+//    Serial.print(" VEL.esq[");
+//    Serial.print(iE);
+//    Serial.print("]= ");
+//    Serial.print(VEL.esq[iE]);
+=======
       //          Serial.print("VEC_ESQ ");
       //          Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" "); Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
       // Serial.print(" VEL.esq[");Serial.print(iE);Serial.print("]= ");Serial.print(VEL.esq[iE]);
+>>>>>>> branch-temporario
       xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
     }
 
@@ -159,9 +172,18 @@ void checkVel( void *pvParameters) {
       flagVelD = false;
     }
     if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+<<<<<<< HEAD
+//        Serial.print(" || VEC_DIR ");
+//        Serial.print(VEL.dir[0]); Serial.print(" "); Serial.print(VEL.dir[1]); Serial.print(" "); Serial.print(VEL.dir[2]); Serial.print(" "); Serial.print(VEL.dir[3]); Serial.print(" "); Serial.println(VEL.dir[4]);
+//   Serial.print(" || VEL.dir[");
+//    Serial.print(iD);
+//    Serial.print("]= ");
+//    Serial.println(VEL.dir[iD]);
+=======
       //        Serial.print(" || VEC_DIR ");
       //        Serial.print(VEL.dir[0]); Serial.print(" "); Serial.print(VEL.dir[1]); Serial.print(" "); Serial.print(VEL.dir[2]); Serial.print(" "); Serial.print(VEL.dir[3]); Serial.print(" "); Serial.println(VEL.dir[4]);
       //     Serial.print(" || VEL.dir["); Serial.print(iD); Serial.print("]= "); Serial.println(VEL.dir[iD]);
+>>>>>>> branch-temporario
       xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
     }
 
@@ -238,7 +260,20 @@ void calcPID( void *pvParameters) {
       xSemaphoreGive( xVELSemaphore );
     }
 
-
+<<<<<<< HEAD
+    for (int e = 0 ; e < 5 ; e++)
+      velEsq = velEsq + VEL.esq[e];
+    velEsq = velEsq/5;
+    
+    for (int e = 0 ; e < 5 ; e++)
+      velDir = velDir + VEL.dir[e];
+    velDir = velDir/5;
+    
+    //    Serial.print(" ESQ ");
+    //    Serial.print(VEL.esq[0]); Serial.print(" "); Serial.print(VEL.esq[1]); Serial.print(" "); Serial.print(VEL.esq[2]); Serial.print(" "); Serial.print(VEL.esq[3]); Serial.print(" "); Serial.print(VEL.esq[4]);
+    //    Serial.print(" DIR ");
+    //    Serial.print(VEL.dir[0]); Serial.print(" "); Serial.print(VEL.dir[1]); Serial.print(" "); Serial.print(VEL.dir[2]); Serial.print(" "); Serial.print(VEL.dir[3]); Serial.print(" "); Serial.println(VEL.dir[4]);
+=======
     //    velEsq = med(VEL.esq);
     //    velDir = med(VEL.dir);
     //    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
@@ -257,6 +292,7 @@ void calcPID( void *pvParameters) {
     velDir = velDir / 3;
     velEsq = velEsq / 3;
 
+>>>>>>> branch-temporario
     /************************************
      *** CALCULOS PARA A RODA ESQUERDA***
      ************************************/
@@ -275,6 +311,15 @@ void calcPID( void *pvParameters) {
     //Modifica o pwm da roda Esquerda, baseado no PI.
     analogWrite (setVelEsq, pwm);
 
+<<<<<<< HEAD
+//    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+//      Serial.print("pwmEsq ");
+//      Serial.print(pwm);
+//      Serial.print("\tvelEsq  ");
+//      Serial.print(velEsq);
+//      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+//    }
+=======
     if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
       //Serial.print(" || pwmEsq ");
       //Serial.print(pwm);
@@ -282,6 +327,7 @@ void calcPID( void *pvParameters) {
       //Serial.print(velEsq);
       xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
     }
+>>>>>>> branch-temporario
 
     /***********************************
      *** CALCULOS PARA A RODA DIREITA***
@@ -301,6 +347,15 @@ void calcPID( void *pvParameters) {
     //Modifica o pwm da roda Direita, baseado no PI.
     analogWrite (setVelDir, pwm);
 
+<<<<<<< HEAD
+//    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+//      Serial.print("\tpwmDir ");
+//      Serial.print(pwm);
+//      Serial.print("\tvelDir ");
+//      Serial.println(velDir);
+//      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
+//    }
+=======
     if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
       //Serial.print("\tpwmDir ");
       //Serial.print(pwm);
@@ -308,6 +363,7 @@ void calcPID( void *pvParameters) {
       //Serial.println(velDir);
       xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
     }
+>>>>>>> branch-temporario
 
     //taskYIELD();
     //Tempo de espera para que esta função seja chamada novamante.
@@ -569,7 +625,11 @@ void setup() {
   xTaskCreate(checkVel, "Velocímetro", 128, NULL, 1, NULL);
 
   //Task que Gerencia a comunicação com o XBEE
+<<<<<<< HEAD
+  xTaskCreate(SerialComunication, "Comunication", 128, NULL, 3, NULL );
+=======
   xTaskCreate(SerialComunication, "Comunication", 128, NULL, 1, NULL );
+>>>>>>> branch-temporario
 
   //Task que Calcula o modeo cinemático do robo, para saber a posição atual e o setPont das rodas
   //xTaskCreate(calcPosition, "Position", 128, NULL, 1, NULL );
