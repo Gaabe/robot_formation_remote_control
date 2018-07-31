@@ -86,7 +86,6 @@ def update_heatmap():
 
 # Função para atualizar toda a janela com o gráfico e o heatmap
 def update_graph():
-    print(ROBOT_SPEED["left"])
     plt.subplots_adjust(hspace = 0.5)
     plt.clf()
     ax1 = fig.add_subplot(221)
@@ -129,10 +128,8 @@ def update_time_on_sensors():
 
 def update_robot_speed(serial):
     global ROBOT_SPEED
-    print("reading serial: ")
     msg = serial.readline().decode("utf-8")
     if msg:
-        print(msg)
         try:
             data = msg.split(',')
             left_speed = data[3]
