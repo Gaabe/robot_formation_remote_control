@@ -152,7 +152,7 @@ class TempMonitor():
         self.number = ""
 
     def log_temperature(self, temp):
-        self.temps.append(float(temp))
+        self.temps.append(float(temp[:5]))
 
     # Caso a temperatura lida por esse sensor seja maior do que o maximo esperado, envia para o robo o numero deste sensor
     def check_and_notify(self, serial, temp):
