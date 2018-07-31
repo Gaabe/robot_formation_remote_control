@@ -7,6 +7,8 @@ import time
 import serial
 from serial.serialutil import SerialException
 import seaborn as sns
+import matplotlib.ticker as ticker
+
 
     
 CONNECTION_LIST = []
@@ -14,7 +16,8 @@ TEMP_MONITORS = []
 RECV_BUFFER = 4096
 PORT = 5000
 GRAPH_WAIT_TIME = 1
-UPDATE_TIME_WAIT_TIME = 10
+UPDATE_TIME_WAIT_TIME = 300
+SPEED_UPDATE_WAIT_TIME = 1
 USB_PORT = "/dev/ttyUSB0"
 MAX_TEMP = 45
 HEAT_MAP = [[26,26,26,26,26,26,26,26,26],
@@ -26,6 +29,12 @@ HEAT_MAP = [[26,26,26,26,26,26,26,26,26],
             [26,26,26,26,26,26,26,26,26],
             [26,26,26,26,26,26,26,26,26],
             [26,26,26,26,26,26,26,26,26]]
+
+ROBOT_SPEED = {
+    "left": deque(30*[0], 30),
+    "right": deque(30*[0], 30)
+}
+
 fig = plt.figure()
 
 sensor0_pos=(0, 4)
@@ -34,8 +43,9 @@ sensor2_pos=(8, 4)
 sensor3_pos=(4, 0)
 
 sensors_pos = (sensor0_pos, sensor1_pos, sensor2_pos, sensor3_pos)
-TEMP_CONST = 0.002
+TEMP_CONST = 0.026
 
+# Função para imprimir matrizes de forma facil de ler, utilizada apenas para debug
 def pretty_print(matrix):
     s = [[str(e) for e in row] for row in matrix]
     lens = [max(map(len, col)) for col in zip(*s)]
@@ -43,6 +53,7 @@ def pretty_print(matrix):
     table = [fmt.format(*row) for row in s]
     print('\n'.join(table))
 
+# Função para atualizar as temperaturas na matriz HEATMAP, considerando as temperaturas medidas pelos sensores
 def interpolate_heatmap():
     global HEAT_MAP
     for s in sensors_pos:
@@ -58,6 +69,7 @@ def interpolate_heatmap():
                         pass
 
 
+# Função para atualizar as temperaturas dos sensores no heatmap
 def update_heatmap():
     global HEAT_MAP
     for monitor in TEMP_MONITORS:
@@ -69,61 +81,80 @@ def update_heatmap():
             HEAT_MAP[8][4] = monitor.temps[29]
         elif monitor.number == "id3":
             HEAT_MAP[4][0] = monitor.temps[29]
-    # print("antes:")
-    # pretty_print(HEAT_MAP)
     interpolate_heatmap()
-    # print("depois:")
-    # pretty_print(HEAT_MAP)
 
 
+# Função para atualizar toda a janela com o gráfico e o heatmap
 def update_graph():
+    print(ROBOT_SPEED["left"])
+    plt.subplots_adjust(hspace = 0.5)
     plt.clf()
-    ax1 = fig.add_subplot(211)
+    ax1 = fig.add_subplot(311)
+    plot = None
     for monitor in TEMP_MONITORS:
-        plt.plot(range(len(monitor.temps)), monitor.temps, label=monitor.number)
-    leg = plt.legend(loc="upper right", shadow=True, fancybox=True)
-    leg.get_frame().set_alpha(0.5)
+        plot = plt.plot(range(len(monitor.temps)), monitor.temps, label=monitor.number)
+    if plot:
+        leg = plt.legend(loc="upper right", shadow=True, fancybox=True)
+        leg.get_frame().set_alpha(0.5)
     plt.title("Monitor de temperatura")
     plt.ylim(0, 150)
 
-    ax2 = fig.add_subplot(212)
+    ax2 = fig.add_subplot(313)
     update_heatmap()
-    ax = sns.heatmap(HEAT_MAP, vmin=20, vmax=200, square=True)
+    sns.heatmap(HEAT_MAP, vmin=20, vmax=200, square=True)
+
+    ax3 = fig.add_subplot(312)
+    plot = plt.plot(range(len(ROBOT_SPEED["left"])), ROBOT_SPEED["left"], label="LEFT")
+    plot = plt.plot(range(len(ROBOT_SPEED["right"])), ROBOT_SPEED["right"], label="RIGHT")
+    leg = plt.legend(loc="upper right", shadow=True, fancybox=True)
+    leg.get_frame().set_alpha(0.5)
+    plt.title("Monitor de velocidade")
+    plt.ylim(-120, 120)
+
+
     plt.pause(0.05)
 
-
+# Retorna o monitor a partir do socket que mandou a mensagem
 def get_temp_monitor(monitors, socket):
     for monitor in monitors:
         if monitor.socket == socket:
             return monitor
 
-def assign_new_monitor_number(monitors):
-    if not monitors:
-        return 1
-    else:
-        number = 1
-        for monitor in monitors:
-            if monitor.number >= number:
-                number = monitor.number
-        return number + 1
-
+# Função para mandar o tempo do servidor para os sensores
 def update_time_on_sensors():
     print("updating time")
     for temp in TEMP_MONITORS:
         temp.socket.send(time.strftime('%Y%m%d%H%M%S', time.localtime()).encode('utf-8'))
 
+def update_robot_speed(serial):
+    global ROBOT_SPEED
+    print("reading serial: ")
+    msg = serial.readline().decode("utf-8")
+    if msg:
+        print(msg)
+        try:
+            data = msg.split(',')
+            left_speed = data[3]
+            right_speed = data[4]
+            ROBOT_SPEED["left"].append(int(left_speed))
+            ROBOT_SPEED["right"].append(int(right_speed))
+        except IndexError:
+            pass
 
 
+# Classe base dos monitores de temperatura
 class TempMonitor():
 
     def __init__(self, socket):
+        # FIFO com 30 ultimas temperaturas
         self.temps = deque(30*[0], 30)
         self.socket = socket
         self.number = ""
 
     def log_temperature(self, temp):
-        self.temps.append(float(temp.decode("utf-8")[:5]))
+        self.temps.append(float(temp))
 
+    # Caso a temperatura lida por esse sensor seja maior do que o maximo esperado, envia para o robo o numero deste sensor
     def check_and_notify(self, serial, temp):
         if float(temp) > MAX_TEMP:
             print("warning robots")
@@ -134,8 +165,9 @@ class TempMonitor():
   
 if __name__ == "__main__":
 
+    # Conexão com a porta serial para o XBee
     try:
-        serial = serial.Serial(USB_PORT, 57600)
+        serial = serial.Serial(USB_PORT, 57600, timeout=1)
 
         if not serial.isOpen():
             serial.open()
@@ -143,6 +175,7 @@ if __name__ == "__main__":
         serial = None
         print("Serial não conectada")
          
+    # Inicialização do socket para receber as conexões
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind(('0.0.0.0', PORT))
@@ -154,21 +187,29 @@ if __name__ == "__main__":
 
     last_time_graph = time.time()
     last_time_update_time = time.time()
- 
+    last_time_update_speed = time.time()
+
+    # Loop principal do servidor
     while 1:
 
+        # Update periodico nos graficos e heatmap
         if time.time() - last_time_graph >= GRAPH_WAIT_TIME:
             update_graph()
             last_time_graph = time.time()
 
+        # Envio periodico do tempo do servidor para os sensores
         if time.time() - last_time_update_time >= UPDATE_TIME_WAIT_TIME:
             update_time_on_sensors()
             last_time_update_time = time.time()
 
-        read_sockets,write_sockets,error_sockets = select.select(CONNECTION_LIST,[],[])
+        if time.time() - last_time_update_speed >= SPEED_UPDATE_WAIT_TIME and serial:
+            update_robot_speed(serial)
+            last_time_update_speed = time.time()
+
+        read_sockets,write_sockets,error_sockets = select.select(CONNECTION_LIST,[],[], 1)
  
         for sock in read_sockets:
-             
+            
             if sock == server_socket:
                 sockfd, addr = server_socket.accept()
                 CONNECTION_LIST.append(sockfd)
