@@ -44,6 +44,12 @@ typedef struct {
   float THETA = 0;
 } Position;
 
+//Struct utilizada para guardar Posições de Referência
+typedef struct {
+  int X = 0;
+  float THETA = 0;
+} Position2;
+
 //Semafor para a serial
 SemaphoreHandle_t xSerialSemaphore;
 
@@ -78,8 +84,8 @@ int med(int vel[3]) {
    Função que faz a leitura da velocidade de uma das rodas através do encoder.
  ******************************************************************************/
 void checkVel( void *pvParameters) {
-//  analogWrite(setVelDir, 90);
-//  analogWrite(setVelEsq, 90);
+  //  analogWrite(setVelDir, 90);
+  //  analogWrite(setVelEsq, 90);
 
   Vel VEL, aux;
   int iE = 0, iD = 0;
@@ -280,7 +286,7 @@ void calcPID( void *pvParameters) {
  *********************************************************************/
 void SCom( void *pvParameters) {
   portBASE_TYPE xStatus;
-  Position PREF, auxPREF, AP;
+  Position2 PREF, auxPREF, AP;
   Vel VEL;
   int velEsq = 0, velDir = 0;
   int i = 0;
@@ -304,14 +310,14 @@ void SCom( void *pvParameters) {
           coordenadas[i] = '\0';
           PREF.X = atoi(coordenadas);
           i = 0;
-          variavel = 'y';
-        }
-        else if (variavel == 'y') {
-          coordenadas[i] = '\0';
-          PREF.Y = atoi(coordenadas);
-          i = 0;
           variavel = 't';
         }
+//        else if (variavel == 'y') {
+//          coordenadas[i] = '\0';
+//          PREF.Y = atoi(coordenadas);
+//          i = 0;
+//          variavel = 't';
+//        }
         else if (variavel == 't') {
           coordenadas[i] = '\0';
           PREF.THETA = atoi(coordenadas);
@@ -356,8 +362,8 @@ void SCom( void *pvParameters) {
       //Serial.print("X: ");
       Serial.print(AP.X);
       Serial.print(",");
-      Serial.print(AP.Y);
-      Serial.print(",");
+//      Serial.print(AP.Y);
+//      Serial.print(",");
       Serial.print(AP.THETA);
       Serial.print(",");
       Serial.print(velEsq);
@@ -408,9 +414,9 @@ void calcPos( void *pvParameters) {
       velEsq = velEsq + VEL.esq[e];
     }
     velDir = velDir / 3;
-    velEsq = velEsq / 3;   
+    velEsq = velEsq / 3;
     velCentroMassa = (velDir + velEsq) / 2;               //Velocidade do centro de massa.
-    wAngular = 1.0*(velDir - velEsq) / DISTANCIA_ENTRE_EIXOS; //Calculo da velocidade angular do carrinho.
+    wAngular = 1.0 * (velDir - velEsq) / DISTANCIA_ENTRE_EIXOS; //Calculo da velocidade angular do carrinho.
     //Calcula a nova posição X e Y e o angulo theta
     AP.X = AP.X + tPos * velCentroMassa * cos(AP.THETA);
     Serial.print("POSIT   ");
@@ -525,10 +531,10 @@ void setup() {
   xSP = xQueueCreate(1, sizeof(SetPoint) );
 
   //Fila usada para armazenar as posições para as quais o robo deve se mover;
-  xReferencePosition = xQueueCreate(1, sizeof(Position) );
+  xReferencePosition = xQueueCreate(1, sizeof(Position2) );
 
   //Fila usada para armazenar as posições para as quais o robo deve se mover;
-  xActualPosition = xQueueCreate(1, sizeof(Position) );
+  xActualPosition = xQueueCreate(1, sizeof(Position2) );
 
   /************
    *** TASKS **
@@ -538,12 +544,12 @@ void setup() {
   //Task que Gerencia a comunicação com o XBEE
   xTaskCreate(SCom, "Comunication", 128, NULL, 1, NULL );
   //Task que Calcula o modeo cinemático do robo, para saber a posição atual e o setPont das rodas
-  xTaskCreate(calcPos, "Position", 128, NULL, 1, NULL );
+  //xTaskCreate(calcPos, "Position", 128, NULL, 1, NULL );
   //Task que Calcula o PID das rodas, dado um SetPoinr.
   xTaskCreate(calcPID, "PID", 128, NULL, 1, NULL);
   /* Start the scheduler so the created tasks start executing. */
   //Task que faz o robo andar
-  xTaskCreate(Walker, "walker", 128, NULL, 1, NULL );
+  xTaskCreate(walker, "walker", 128, NULL, 1, NULL );
   vTaskStartScheduler();
   for (;;);
 
@@ -552,4 +558,89 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
 
+}
+
+
+void walker( void *pvParameters) {
+  portBASE_TYPE xStatus;
+  float ThetaA = 0;
+  float e = 0;
+  int ep = 0;
+  int v = 0, w = 0;
+  int velEsq = 0, velDir = 0;
+  Vel VEL;
+  SetPoint sp, auxSP;
+  Position2 AP, PREF, auxAP;
+  for (;;) {
+    //Leitura da Fila para saber o valor da ultima velocidade lida na roda Esquerda e Direita
+    if ( xSemaphoreTake( xVELSemaphore, ( TickType_t ) 10 ) == pdTRUE ) {
+      xStatus = xQueuePeek(xVelocidade, &VEL, 5 / portTICK_PERIOD_MS);
+      xSemaphoreGive( xVELSemaphore );
+    }
+
+    //Pega da fila os valores de referencia passado pelo servidor
+    if ( xSemaphoreTake( xPREFSemaphore, ( TickType_t ) 5 ) == pdTRUE )
+    {
+      xStatus = xQueuePeek(xReferencePosition, &PREF, 5 / portTICK_PERIOD_MS);
+      xSemaphoreGive( xPREFSemaphore );
+    }
+
+    velDir = 0;
+    velEsq = 0;
+    for (int e = 0 ; e < 3 ; e++) {
+      velDir = velDir + VEL.dir[e];
+      velEsq = velEsq + VEL.esq[e];
+    }
+    velDir = velDir / 3;
+    velEsq = velEsq / 3;
+    v = (velDir + velEsq) / 2;               //Velocidade do centro de massa.
+    w = 1.0 * (velDir - velEsq) / DISTANCIA_ENTRE_EIXOS; //Calculo da velocidade angular do carrinho.
+
+    Serial.println(e);
+
+    AP.THETA = AP.THETA + w / 2;
+    e = PREF.THETA - AP.THETA;
+
+    AP.X = AP.X + v / 2;
+    ep = PREF.X - AP.X;
+
+    if (abs(e) > 0.2) {
+      if (e > 0) {
+        digitalWrite(setVelEsq, LOW);
+        digitalWrite(setVelDir, HIGH);
+      }
+      else if (e < 0) {
+        digitalWrite(setVelEsq, HIGH);
+        digitalWrite(setVelDir, LOW);
+      }
+      sp.esq = 30;
+      sp.dir = 30;
+    }
+    else {
+      if (ep > 0) {
+        digitalWrite(setVelEsq, LOW);
+        digitalWrite(setVelDir, LOW);
+        sp.esq = 40;
+        sp.dir = 40;
+      }
+      else {
+        sp.esq = 0;
+        sp.dir = 0;
+      }
+    }
+
+    if ( xSemaphoreTake( xSPSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+      xStatus = xQueueReceive(xSP, &auxSP, 10 / portTICK_PERIOD_MS);
+      xStatus = xQueueSendToBack(xSP, &sp, 0);
+      xSemaphoreGive( xSPSemaphore );
+    }
+
+    //Atualisa os valores das posições atuais do robo
+    if ( xSemaphoreTake( xAPSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+      xStatus = xQueueReceive(xActualPosition, &auxAP, 10 / portTICK_PERIOD_MS);
+      xStatus = xQueueSendToBack(xActualPosition, &AP, 0);
+      xSemaphoreGive( xAPSemaphore );
+    }
+    vTaskDelay(500 / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
+  }
 }
