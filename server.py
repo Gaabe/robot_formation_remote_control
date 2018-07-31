@@ -73,13 +73,13 @@ def interpolate_heatmap():
 def update_heatmap():
     global HEAT_MAP
     for monitor in TEMP_MONITORS:
-        if monitor.number == "id0":
+        if monitor.number == "id1":
             HEAT_MAP[0][4] = monitor.temps[29]
-        elif monitor.number == "id1":
-            HEAT_MAP[4][8] = monitor.temps[29]
         elif monitor.number == "id2":
-            HEAT_MAP[8][4] = monitor.temps[29]
+            HEAT_MAP[4][8] = monitor.temps[29]
         elif monitor.number == "id3":
+            HEAT_MAP[8][4] = monitor.temps[29]
+        elif monitor.number == "id4":
             HEAT_MAP[4][0] = monitor.temps[29]
     interpolate_heatmap()
 
