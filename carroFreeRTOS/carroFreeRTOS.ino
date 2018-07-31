@@ -6,6 +6,7 @@
 #include <Arduino_FreeRTOS.h>
 #include <semphr.h>
 
+
 #define ENC_DIR 0
 #define ENC_ESQ 1
 
@@ -18,7 +19,7 @@
 #define setSentidoDir 7 //M0 Direction Control
 #define dist 11 //Perimetro da roda
 
-#define Kp 4
+#define Kp 2
 #define Ki 2
 
 unsigned long ulIdleCycleCount = 0UL;
@@ -318,8 +319,7 @@ void calcPID( void *pvParameters) {
 /*********************************************************************
  *** Task responsavel por fazer a comunicação via serial com o XBEE***
  *********************************************************************/
-void SerialComunication( void *pvParameters) {
-
+void SCom( void *pvParameters) {
   portBASE_TYPE xStatus;
   Position PREF, auxPREF, AP;
   Vel VEL;
@@ -367,7 +367,7 @@ void SerialComunication( void *pvParameters) {
     }
     xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
 
-    //if ( xSemaphoreTake( xPREFSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+    //if ( xSemaphoreTake( xemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
     //  xStatus = xQueueReceive(xReferencePosition, &auxPREF, 10 / portTICK_PERIOD_MS);
     //  xStatus = xQueueSendToBack(xReferencePosition, &PREF, 0);
     //  xSemaphoreGive( xPREFSemaphore );
@@ -397,15 +397,15 @@ void SerialComunication( void *pvParameters) {
 
     if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
     {
-      Serial.print("X: ");
+      //Serial.print("X: ");
       Serial.print(PREF.X);
-      Serial.print("\tY: ");
+      Serial.print(",");
       Serial.print(PREF.Y);
-      Serial.print("\tT: ");
+      Serial.print(",");
       Serial.print(PREF.THETA);
-      Serial.print("\tvelEsq: ");
+      Serial.print(",");
       Serial.print(velEsq);
-      Serial.print("\tvelDir: ");
+      Serial.print(",");
       Serial.println(velDir);
       xSemaphoreGive( xSerialSemaphore );
     }
@@ -416,7 +416,7 @@ void SerialComunication( void *pvParameters) {
 /********************************************************************************
  *** Implementa o modelo cinemático do robo, para que ele possa se movimentar.***
  *******************************************************************************/
-void calcPosition( void *pvParameters) {
+void calcPos( void *pvParameters) {
 
   portBASE_TYPE xStatus;
   Position PREF, AP, auxAP;
@@ -446,8 +446,14 @@ void calcPosition( void *pvParameters) {
     //      xSemaphoreGive( xPREFSemaphore );
     //    }
 
-    velEsq = med(VEL.esq);
-    velDir = med(VEL.dir);
+    velDir = 0;
+    velEsq = 0;
+    for (int e = 0 ; e < 3 ; e++) {
+      velDir = velDir + VEL.dir[e];
+      velEsq = velEsq + VEL.esq[e];
+    }
+    velDir = velDir / 3;
+    velEsq = velEsq / 3;
 
     velCentroMassa = (velDir + velEsq) / 2;               //Velocidade do centro de massa.
     wAngular = (velDir - velEsq) / DISTANCIA_ENTRE_EIXOS; //Calculo da velocidade angular do carrinho.
@@ -463,28 +469,29 @@ void calcPosition( void *pvParameters) {
     erro3 = PREF.THETA - AP.THETA;
 
     //Baseado nos erros calculados, a baixo são calculadas as novas velocidades do centro de massa e angular do robo.
-    newVel = 50 * cos(erro3) + ki1 * erro1;
+    newVel = 50 * cos(erro3) + ki1 * erro1; 
     newWAngular = 10 + ki2 * 50 * erro2 + ki3 * 50 * sin(erro3);
 
     //Calculo dos novos setPoints das rodas Esquerda e Direita.
     sp.esq = 2 * DISTANCIA_ENTRE_EIXOS * (newVel - newWAngular) / (2 + DISTANCIA_ENTRE_EIXOS);
-    sp.esq = 2 * DISTANCIA_ENTRE_EIXOS * (newVel + newWAngular) / (2 + DISTANCIA_ENTRE_EIXOS);
+    sp.dir = 2 * DISTANCIA_ENTRE_EIXOS * (newVel + newWAngular) / (2 + DISTANCIA_ENTRE_EIXOS);
 
-    //    //Atualisa os valores de setPoint das velocidades de cada roda
-    //    if ( xSemaphoreTake( xSPSemaphore, ( TickType_t ) 5 ) == pdTRUE ){
-    //      xStatus = xQueueReceive(xSP, &auxSP, 10 / portTICK_PERIOD_MS);
-    //      xStatus = xQueueSendToBack(xSP, &sp, 0);
-    //      xSemaphoreGive( xSPSemaphore );
-    //    }
-    //
-    //    //Atualisa os valores das posições atuais do robo
-    //    if ( xSemaphoreTake( xAPSemaphore, ( TickType_t ) 5 ) == pdTRUE ){
-    //      xStatus = xQueueReceive(xActualPosition, &auxAP, 10 / portTICK_PERIOD_MS);
-    //      xStatus = xQueueSendToBack(xActualPosition, &AP, 0);
-    //      xSemaphoreGive( xAPSemaphore );
-    //    }
+    //Atualisa os valores de setPoint das velocidades de cada roda
+    if ( xSemaphoreTake( xSPSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+      xStatus = xQueueReceive(xSP, &auxSP, 10 / portTICK_PERIOD_MS);
+      xStatus = xQueueSendToBack(xSP, &sp, 0);
+      xSemaphoreGive( xSPSemaphore );
+    }
+
+    //Atualisa os valores das posições atuais do robo
+    if ( xSemaphoreTake( xAPSemaphore, ( TickType_t ) 5 ) == pdTRUE ) {
+      xStatus = xQueueReceive(xActualPosition, &auxAP, 10 / portTICK_PERIOD_MS);
+      xStatus = xQueueSendToBack(xActualPosition, &AP, 0);
+      xSemaphoreGive( xAPSemaphore );
+    }
   }
-  vTaskDelay(tPos / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
+
+  vTaskDelay(1000 / portTICK_PERIOD_MS); //delay em num de ticks, se usar o / fica em ms
 }
 
 
@@ -497,7 +504,6 @@ void setup() {
 
   Serial.begin(57600);
   while (!Serial) {}
-
   // Semaphores are useful to stop a Task proceeding, where it should be paused to wait,
   // because it is sharing a resource, such as the Serial port.
   // Semaphores should only be used whilst the scheduler is running, but we can set it up here.
@@ -507,7 +513,6 @@ void setup() {
     if ( ( xSerialSemaphore ) != NULL )
       xSemaphoreGive( ( xSerialSemaphore ) );  // Make the Serial Port available for use, by "Giving" the Semaphore.
   }
-
   /***************
   *** Semaforos **
   ****************/
@@ -517,40 +522,37 @@ void setup() {
     if (xSerialSemaphore != NULL)
       xSemaphoreGive(xSerialSemaphore);  // Make the Serial Port available for use, by "Giving" the Semaphore.
   }
-
   //Semaforo para a Queue da Posição atual
   if (xAPSemaphore == NULL) { // Check to confirm that the Serial Semaphore has not already been created.
     xAPSemaphore = xSemaphoreCreateMutex();  // Create a mutex semaphore we will use to manage the Serial Port
     if (xAPSemaphore != NULL)
       xSemaphoreGive(xAPSemaphore);  // Make the Serial Port available for use, by "Giving" the Semaphore.
   }
-
-  //Semaforo para a Queue da Posição de Referencia
-  if (xPREFSemaphore == NULL) { // Check to confirm that the Serial Semaphore has not already been created.
-    xPREFSemaphore = xSemaphoreCreateMutex();  // Create a mutex semaphore we will use to manage the Serial Port
-    if (xPREFSemaphore != NULL)
-      xSemaphoreGive(xPREFSemaphore);  // Make the Serial Port available for use, by "Giving" the Semaphore.
-  }
-
+//  Serial.println("4");
+//  //Semaforo para a Queue da Posição de Referencia
+//  if (xPREFSemaphore == NULL) { // Check to confirm that the Serial Semaphore has not already been created.
+//    xPREFSemaphore = xSemaphoreCreateMutex();  // Create a mutex semaphore we will use to manage the Serial Port
+//    if (xPREFSemaphore != NULL)
+//      xSemaphoreGive(xPREFSemaphore);  // Make the Serial Port available for use, by "Giving" the Semaphore.
+//  }
   //Semaforo para a Queue da Velocidade
   if (xVELSemaphore == NULL) { // Check to confirm that the Serial Semaphore has not already been created.
     xVELSemaphore = xSemaphoreCreateMutex();  // Create a mutex semaphore we will use to manage the Serial Port
     if (xVELSemaphore != NULL)
       xSemaphoreGive(xVELSemaphore);  // Make the Serial Port available for use, by "Giving" the Semaphore.
   }
-
+  
   //Semaforo para a Queue do SetPoint atual de Velocidade
   if (xSPSemaphore == NULL) { // Check to confirm that the Serial Semaphore has not already been created.
     xSPSemaphore = xSemaphoreCreateMutex();  // Create a mutex semaphore we will use to manage the Serial Port
     if (xSPSemaphore != NULL)
       xSemaphoreGive(xSPSemaphore);  // Make the Serial Port available for use, by "Giving" the Semaphore.
   }
-
   /***********
   *** FILAS **
   ************/
   //Fila que guarda a velocidade da roda esquerda
-  xVelocidade = xQueueCreate(5, sizeof(Vel) );
+  xVelocidade = xQueueCreate(2, sizeof(Vel) );
 
   //Fila usada para armazenar os valores do SetPoint
   xSP = xQueueCreate(1, sizeof(SetPoint) );
@@ -561,25 +563,19 @@ void setup() {
   //Fila usada para armazenar as posições para as quais o robo deve se mover;
   xActualPosition = xQueueCreate(1, sizeof(Position) );
 
-
   /************
    *** TASKS **
    ************/
   //Task que calcula a velocida da roda Esquerda
   xTaskCreate(checkVel, "Velocímetro", 128, NULL, 1, NULL);
-
   //Task que Gerencia a comunicação com o XBEE
-  xTaskCreate(SerialComunication, "Comunication", 128, NULL, 1, NULL );
-
+  xTaskCreate(SCom, "Comunication", 128, NULL, 1, NULL );
   //Task que Calcula o modeo cinemático do robo, para saber a posição atual e o setPont das rodas
-  //xTaskCreate(calcPosition, "Position", 128, NULL, 1, NULL );
-
+  xTaskCreate(calcPos, "Position", 128, NULL, 1, NULL );
   //Task que Calcula o PID das rodas, dado um SetPoinr.
-  xTaskCreate(calcPID, "PID", 128, NULL, 2, NULL);
-
+  xTaskCreate(calcPID, "PID", 128, NULL, 1, NULL);
   /* Start the scheduler so the created tasks start executing. */
   vTaskStartScheduler();
-
   for (;;);
 
 }
