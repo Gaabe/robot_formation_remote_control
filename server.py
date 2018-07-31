@@ -89,7 +89,7 @@ def update_graph():
     print(ROBOT_SPEED["left"])
     plt.subplots_adjust(hspace = 0.5)
     plt.clf()
-    ax1 = fig.add_subplot(311)
+    ax1 = fig.add_subplot(221)
     plot = None
     for monitor in TEMP_MONITORS:
         plot = plt.plot(range(len(monitor.temps)), monitor.temps, label=monitor.number)
@@ -99,11 +99,12 @@ def update_graph():
     plt.title("Monitor de temperatura")
     plt.ylim(0, 150)
 
-    ax2 = fig.add_subplot(313)
+    ax2 = fig.add_subplot(122)
     update_heatmap()
     sns.heatmap(HEAT_MAP, vmin=20, vmax=200, square=True)
+    plt.title("Heat Map")
 
-    ax3 = fig.add_subplot(312)
+    ax3 = fig.add_subplot(223)
     plot = plt.plot(range(len(ROBOT_SPEED["left"])), ROBOT_SPEED["left"], label="LEFT")
     plot = plt.plot(range(len(ROBOT_SPEED["right"])), ROBOT_SPEED["right"], label="RIGHT")
     leg = plt.legend(loc="upper right", shadow=True, fancybox=True)
