@@ -157,7 +157,7 @@ class TempMonitor():
         if float(temp) > MAX_TEMP:
             print("warning robots")
             if serial:
-                serial.write(self.number[2].encode("utf-8"))
+                serial.write("{number}$".format(number=self.number[2]).encode("utf-8"))
 
 
   
